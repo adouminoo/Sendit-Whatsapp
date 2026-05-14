@@ -1,5 +1,6 @@
 /* =====================================================
    script.js  —  Sendit Order Tool
+   v3.0: + OCR screenshot upload + Reference toggle
    ===================================================== */
 
 // ─────────────────────────────────────────
@@ -9,7 +10,7 @@ const CITY_MAP = {
   "ighrem n'ougdal":617,"anzal":616,"timedline":615,"tabounte ouarzazate":614,"tabourahte":613,"agouim":612,"amerzgane":611,"aït ben haddou":610,"sidi bouzid ( safi )":609,"aquermoud":608,"bni boufrah":607,"galaz":606,"ahejarr ennehal":604,"melloussa":603,"imi ouaddar":602,"mirleft":601,"ain lahcen":600,"beni hassane":598,"belyounech":597,"azla":596,"bni ahmed cherqia":595,"kaa asrass":594,"el jebeha":593,"stehat":592,"ben karrich":591,"hajria ouled daoud":589,"ourtzagh":588,"fricha":587,"khlalfa":586,"kariat ba mohamed":585,"sebt ben sassi":584,"sidi zouine":583,"chrifia":582,"sidi bou othmane":581,"ben rahmoun":580,"asni":579,"belaaguid":577,"mohammedia - alia":576,"mohammedia - hay wafa":575,"mohammedia - hassania":574,"mohammedia - nassim":573,"mohammedia - al massira":572,"mohammedia - al wahda":571,"mohammedia - kasbah":570,"mohammedia - parc":569,"achakkar":568,"tansifte":567,"tinzouline":566,"taghbalt":565,"tamezmoute":564,"ternata":563,"tazarine":562,"m'hamid el ghizlane":561,"nkoub":560,"fezouata":559,"errouha":558,"ait boudaoud":557,"tagounite":556,"bleida":554,"beni zoli":553,"tamegroute":552,"birkouate":551,"had draa":550,"tafetachte":549,"meskala":548,"tleta-el henchane":547,"douar laarab":546,"ait daoud":545,"tamanar":544,"smimou":543,"tidzi":542,"sidi kaouki":541,"sidi taibi":540,"ouahat sidi brahim":539,"bouskoura-ouled saleh":538,"bouskoura-ville verte":537,"lalla mimouna":536,"dlalha":535,"sebt jahjouhe":534,"bouderbala":533,"timahdite":532,"zouada":531,"khemis du sahel":530,"afsou":529,"oulad amrane région el jadida":528,"el haouzia":527,"messawerr rasso":526,"sidi smaïl":525,"oulad frej":524,"bir jdid":523,"bab marzouka":522,"marnissa":521,"tiddas":520,"guisser":519,"el borouj région de settat":518,"oulad abbou":517,"oulad said région de settat":516,"sidi el ayedi":515,"ras el ain région de settat":514,"ain mediouna":513,"bouhouda":512,"bani walid":511,"ain aicha":510,"tissa":509,"azrou région d'agadir":508,"outat el haj":507,"el kebab":506,"sidi allal tazi":505,"ain leuh":504,"timezgadiouine":503,"bni bouayach":502,"issaguen":501,"targuist":500,"bni hadifa":499,"ait-kamara":498,"boukidaren":497,"ajdir":496,"bassatine el menzeh":495,"jaadar":494,"afra":493,"bouarg":492,"mariouari":491,"beni sidal jbel":490,"kariat arekmane":489,"ouled settout":488,"tafersit":487,"kassita":486,"telat azlaf":485,"tamsamane":484,"boudinar":483,"dar-el kebdani":482,"aïn erreggada":481,"boughriba":480,"madagh":479,"beni drar":478,"tendrara":477,"bouârfa":476,"figuig":475,"el-afak":474,"casablanca - abdelmoumen":473,"ras el ma - cap de l'eau":472,"oulad azzouz dar 16":471,"casablanca - jawhara":470,"casablanca - nassim ii":463,"casablanca - al mostakbal":464,"casablanca - sid al khadir":465,"casablanca - el hana":466,"casablanca - tantonville":469,"casablanca - france ville ii":467,"casablanca - lamkansa":468,"taghazout":462,"loulad":461,"ouled dahhou":459,"tamraght":458,"ouled moumna":457,"agouidir":456,"bouaboud":455,"ighoud":454,"sidi chiker":453,"ait hadi":452,"mejjat - région de marrakech":451,"mzoudia":450,"sidi bou zid chichaoua":449,"sid l'mokhtar":448,"imintanout":447,"beni chiker":446,"tiztoutine":445,"ben taieb":444,"midar":443,"driouch":442,"farkhana":441,"touima":440,"assahrij":439,"laayayta":418,"foum oudi":417,"had boumoussa":416,"bradia":415,"aït ishaq":414,"tighassaline":413,"aguelmous":412,"ouaouizeght":411,"beni ayat":410,"timoulilt":409,"afourar":408,"oulad m'barek":407,"sidi aïssa":406,"oulad ayad":405,"dar ould zidouh":404,"souk sebt":403,"sidi jaber":402,"oulad zmam":401,"oulad ali":400,"oulad youssef":398,"tagzirt":397,"ighrem laâlam":396,"oulad yaich":395,"taliouine":394,"oulad berhil":393,"massa":392,"lagfifat":391,"rencon":390,"cabo negro":389,"laaouamera":388,"khandagour":387,"jebila":386,"mnar":385,"sidi hssain":384,"gueznaia":383,"ghafsai":382,"ghazoua":381,"ait aiaaza":380,"aoulouz":379,"dcheira el jihadia":378,"leqliaa":377,"tarast":376,"loudaya":375,"aourir région agadir":374,"rommani":373,"oulmès":372,"el aarjate":371,"moulay bousselham":368,"mehdia":367,"harhoura":366,"mers el kheir":365,"tahanaout":364,"assa":363,"bab taza":362,"tahla":358,"imzouren":357,"ourika":356,"ait ourir":355,"boulman":354,"oued laou":353,"el mansouria":352,"tizi ouasli":351,"boured":350,"aknoul":349,"oued amlil":347,"el ksiba":344,"khenichet":343,"jorf el melha":341,"aïn-béni-mathar":340,"el aïoun charqiya":339,"aklim":338,"zaio":337,"ayt ihya":336,"msemrir":335,"ait sedrate sahl gharbia":334,"alnif":333,"aït tarzout":332,"ait aissa ou brahim":331,"aoufous":330,"missour":329,"boumia":328,"zaida":327,"tamaris":326,"jerada":325,"boumalen dades":324,"ouazzane":323,"tata":322,"agourai":320,"tinejdad":319,"el gara":318,"mechra bel ksiri":317,"saiss":316,"moulay yâcoub":315,"ain-cheggag":314,"sakia el hamra":313,"tlat bouguedra":311,"souira guedima":310,"ounagha":309,"talmest":308,"oualidia":307,"zeghanghane":304,"essemara":303,"chtouka - région agadir":297,"ait amira":296,"temsia":295,"tikiwin":294,"agdz (zagoura)":293,"taznakht":292,"skoura":291,"echemmaia":290,"skhour rehamna":289,"tamellalt":288,"douar lahna":287,"sidi abdellah ghiyat":286,"lahbichat":285,"sidi moussa région de marrakech":284,"ouled hassoune":283,"souihla":282,"alouidane":281,"chwiter":280,"tameslouht":279,"tssoultante":278,"harbile":277,"dar essalam":276,"ben ahmed":275,"sidi hajjaj région de settat":274,"bni yakhlef":273,"hettan":272,"bounoir":271,"sidi yahya el gharb":270,"zaer":269,"ain chkaf":268,"m'haya":267,"ouislane":266,"mejat région de fès-meknès":265,"skhinate":264,"oulad tayeb":263,"sidi hrazem":262,"deroua":261,"ksar sghir":260,"casablanca - palmier":258,"casablanca - anassi":359,"casablanca - azhar":360,"casablanca - salmia":361,"casablanca - lahraouine":369,"casablanca - ghandi":420,"casablanca - el hank":421,"casablanca - hay tissir":422,"casablanca - hay el farah":423,"casablanca - habous":424,"casablanca - bachkou":425,"casablanca - derb milan":426,"casablanca - derb alkabir":427,"casablanca - val fleurie":428,"casablanca - riveira":429,"casablanca - bournazel":430,"casablanca - floride":431,"casablanca - mandarona":432,"casablanca - polo":433,"casablanca - hay assalama":434,"casablanca - attacharok":435,"casablanca - derb sultan":436,"casablanca - hay al inara":437,"el hajeb":257,"goulmima":255,"boufakrane":253,"sidi bouknadel":233,"zaouiat cheikh":232,"zagoura":229,"youssoufia":228,"tiznit":226,"tit melil":225,"tinghir":224,"tiflet":223,"tetouan":222,"temara":220,"taroudant":218,"taourirt":216,"taounate":215,"tan-tan":214,"tamesna":212,"tamansourt":211,"souk el arbaa du gharb":209,"skhirat":208,"sidi slimane":206,"sidi kacem":205,"sidi ifni":204,"sidi bouzid ( el jadida )":203,"sidi bibi":202,"sidi bennour":201,"sidi allal el bahraoui":200,"sidi addi":198,"sefrou":196,"sebt oulad nemma":195,"sebt gzoula":193,"sebt el guerdane":192,"sala el jadida":191,"sale":190,"saidia":189,"safi":188,"rissani":186,"oulad teima":181,"oued zem":180,"ouarzazate":177,"mrirt":175,"moulay idriss zerhouni":174,"moulay abdellah":172,"midelt":170,"merzouga":168,"meknes":167,"mdiq":165,"laarache":164,"laâyoune":162,"laattaouia":161,"ksar el kebir":159,"khouribga":158,"khenifra":157,"khemis des zemamra":156,"kenitra":155,"kelaat m'gouna":154,"kasba tadla":153,"jamaat shaim":149,"inzegane":148,"imouzzer du kandar":147,"ifran":145,"guercif":143,"guelmim":142,"fquih ben salah":141,"fes":139,"essaouira":137,"errachidia":136,"er-rich":135,"el kelaa des sraghna":133,"haj kaddour":132,"drarga":130,"demnate":126,"dakhla":124,"chichaoua":123,"chefchaouen":122,"boujniba":119,"boujdour":118,"beni mellal":115,"benguerir":113,"belfaa":111,"bejaad":110,"bab berred":108,"azrou région de fès-meknès":107,"azilal":106,"azemmour":105,"assilah":104,"arfoud":102,"anza":100,"aït melloul":96,"ain taoujdate":94,"ain attig":87,"ain el aouda":86,"taza":81,"selouane":76,"oujda":73,"nador":72,"martil":71,"khemisset":70,"fnideq":69,"chellalat mohammedia":68,"biougra":66,"berkane":65,"benslimane":64,"beni ensar":63,"al hoceima":61,"al aaroui":60,"ain harrouda":58,"ahfir":57,"marrakech":56,"el jadida":55,"agadir":54,"rabat":53,"tanger":52,"sidi rahal":51,"bouznika":49,"casablanca - 2 mars":48,"had soualem":47,"casablanca - autres quartiers":46,"nouacer":45,"mediouna":44,"settat":43,"berrechid":42,"dar bouaza":40,"errahma":39,"bouskoura-centre":38,"mohammedia":41,"casablanca - sidi othmane":37,"casablanca - sidi moumen":36,"casablanca - derb omar":35,"casablanca - ancienne medina":34,"casablanca - sidi belyout":33,"casablanca - gauthier":32,"casablanca - centre ville":31,"casablanca - sbata":30,"casablanca - ain borja":29,"casablanca - belvédère":28,"casablanca - roches noires":27,"casablanca - hay moulay rachid":26,"casablanca - garage allal":25,"casablanca - la gironde":24,"casablanca - mers sultan":23,"casablanca - les hôpitaux":22,"casablanca - derb ghalef":21,"casablanca - maarif":20,"casablanca - hay mohammedi":19,"casablanca - oulfa":18,"casablanca - lissassfa":17,"casablanca - cil":16,"casablanca - beauséjour":15,"casablanca - hay hassani":14,"casablanca - bernoussi":13,"casablanca - ben msik":12,"casablanca - ain sebaa":11,"casablanca - oasis":10,"casablanca - hay moulay abdellah":9,"casablanca - californie":8,"casablanca - ain chok":7,"casablanca - racine":6,"casablanca - bourgogne":5,"casablanca - anfa":4,"casablanca - ain diab":3,"casablanca - sidi maârouf":2,"casablanca - al fida":1
 };
 
-// City aliases/shortcuts (Darija / common abbreviations)
+// City aliases/shortcuts
 const CITY_ALIASES = {
   "casa": "casablanca",
   "casablanca": "casablanca",
@@ -42,9 +43,9 @@ const CITY_ALIASES = {
 // ─────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────
-let pendingOrders = [];   // extracted, not yet sent
-let sentOrders    = [];   // sent via this tool (persisted in localStorage)
-let customers     = {};   // phone → {notes, orders[]}
+let pendingOrders = [];
+let sentOrders    = [];
+let customers     = {};
 let selectedRows  = new Set();
 let currentView   = 'extract';
 let sortField     = 'timestamp';
@@ -53,6 +54,67 @@ let filterStatus  = '';
 let filterCity    = '';
 let filterProduct = '';
 let searchQuery   = '';
+
+// ─────────────────────────────────────────
+//  REFERENCE TOGGLE STATE
+// ─────────────────────────────────────────
+let activeReference = null; // null = none selected
+
+/** Load persisted reference from localStorage */
+function loadReference() {
+  const saved = localStorage.getItem('sendit_reference');
+  if (saved) {
+    activeReference = saved;
+    // Activate the matching button
+    const btn = document.querySelector(`.ref-toggle[data-ref="${saved}"]`);
+    if (btn) activateRefButton(btn);
+  }
+}
+
+/** Called by inline onclick on each ref-toggle button */
+function selectReference(btn) {
+  const ref = btn.dataset.ref;
+  if (activeReference === ref) {
+    // Deselect if clicking the active one
+    activeReference = null;
+    localStorage.removeItem('sendit_reference');
+    deactivateAllRefButtons();
+    updateReferenceBadge(null);
+  } else {
+    activeReference = ref;
+    localStorage.setItem('sendit_reference', ref);
+    activateRefButton(btn);
+    updateReferenceBadge(btn.dataset.value);
+  }
+}
+
+function activateRefButton(btn) {
+  deactivateAllRefButtons();
+  btn.classList.add('active');
+}
+
+function deactivateAllRefButtons() {
+  document.querySelectorAll('.ref-toggle').forEach(b => b.classList.remove('active'));
+}
+
+function updateReferenceBadge(value) {
+  const badge = document.getElementById('reference-active-badge');
+  if (!badge) return;
+  if (value) {
+    badge.textContent = value;
+    badge.className = 'reference-active-badge';
+  } else {
+    badge.textContent = 'None';
+    badge.className = 'reference-none-badge';
+  }
+}
+
+/** Returns the reference string to inject into Sendit payload, or null */
+function getActiveReferenceValue() {
+  if (!activeReference) return null;
+  const btn = document.querySelector(`.ref-toggle[data-ref="${activeReference}"]`);
+  return btn ? btn.dataset.value : null;
+}
 
 // ─────────────────────────────────────────
 //  PERSISTENCE
@@ -93,18 +155,14 @@ function cleanPrice(price) {
 
 function findBestCity(cityInput) {
   const raw = String(cityInput).toLowerCase().trim();
-  // alias check
   if (CITY_ALIASES[raw]) {
     const aliased = CITY_ALIASES[raw];
     if (CITY_MAP[aliased] !== undefined) return { id: CITY_MAP[aliased], name: aliased };
   }
-  // exact
   if (CITY_MAP[raw] !== undefined) return { id: CITY_MAP[raw], name: raw };
-  // starts-with (city starts with input)
   for (const k of Object.keys(CITY_MAP)) {
     if (k.startsWith(raw) || raw.startsWith(k)) return { id: CITY_MAP[k], name: k };
   }
-  // contains
   for (const k of Object.keys(CITY_MAP)) {
     if (k.includes(raw) || raw.includes(k)) return { id: CITY_MAP[k], name: k };
   }
@@ -180,7 +238,6 @@ function navigate(view) {
   if (el) { el.classList.add('active'); el.classList.add('fade-in'); }
   const nav = document.querySelector(`.nav-item[data-view="${view}"]`);
   if (nav) nav.classList.add('active');
-  // page title
   const titles = { extract:'Extract Orders', orders:'Order Management', customers:'Customers', settings:'Settings' };
   document.getElementById('topbar-title').textContent = titles[view] || 'Dashboard';
   closeSidebar();
@@ -208,9 +265,12 @@ function updateStats() {
   const pending = sentOrders.filter(o => o.status === 'pending' || o.status === 'sent').length;
 
   setText('stat-total', total);
+  setText('stat-total-card', total);
   setText('stat-delivered', delivered);
+  setText('stat-delivered-card', delivered);
   setText('stat-revenue', revenue ? revenue.toLocaleString('fr-MA') + ' DH' : '0 DH');
   setText('stat-pending', pending);
+  setText('stat-pending-card', pending);
 }
 
 function setText(id, val) {
@@ -222,8 +282,6 @@ function setText(id, val) {
 //  AI EXTRACTION  (OpenAI)
 // ─────────────────────────────────────────
 async function extractOrders(text) {
-  
-
   const prompt = `Extract order information from this Moroccan WhatsApp message.
 The message may be in Darija, French, Arabic, or mixed.
 
@@ -261,11 +319,8 @@ Message:
 ${text}`;
 
   const res = await fetch(CONFIG.API_PROXY_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  }, 
-     
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: CONFIG.OPENAI_MODEL || 'gpt-4o-mini',
       max_tokens: 1000,
@@ -281,7 +336,6 @@ ${text}`;
 
   const data = await res.json();
   let content = data.choices[0].message.content.trim();
-  // strip markdown fences
   content = content.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
   const parsed = JSON.parse(content);
   return Array.isArray(parsed) ? parsed : [parsed];
@@ -421,6 +475,8 @@ async function getSenditToken() {
 async function sendToSendit(order) {
   const token = await getSenditToken();
   const city = findBestCity(order.city);
+
+  // Build base payload
   const payload = {
     pickup_district_id: CONFIG.PICKUP_DISTRICT_ID || 31,
     district_id: city.id,
@@ -432,6 +488,14 @@ async function sendToSendit(order) {
     comment: '(SH)',
     packaging_id: 1
   };
+
+  // ── Inject reference if one is active ──────────────────────
+  const refValue = getActiveReferenceValue();
+  if (refValue) {
+    payload.reference = refValue;
+  }
+  // ───────────────────────────────────────────────────────────
+
   const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -454,18 +518,14 @@ async function sendSinglePending(idx) {
 
     if (res.ok && (data.status === 'success' || data.data)) {
       const labelUrl = data.data?.label_url || '';
-      // save to sentOrders
       const saved = { ...order, status: 'sent', sentAt: Date.now(), labelUrl, senditData: data.data };
       sentOrders.unshift(saved);
-      // update customer profile
       addCustomerRecord(saved);
       saveData();
       updateStats();
-      // remove from pending
       pendingOrders.splice(idx, 1);
       renderPendingTable();
       toast('success', 'Order Sent! 🎉', `${order.name} — ${order.product}`);
-      // show confirmation modal
       showConfirmMessage(saved, labelUrl);
     } else {
       throw new Error(data.message || JSON.stringify(data));
@@ -536,7 +596,6 @@ function renderOrdersTable() {
 
   let orders = [...sentOrders];
 
-  // filters
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     orders = orders.filter(o =>
@@ -550,7 +609,6 @@ function renderOrdersTable() {
   if (filterCity)   orders = orders.filter(o => (o.city||'').toLowerCase().includes(filterCity.toLowerCase()));
   if (filterProduct)orders = orders.filter(o => (o.product||'').toLowerCase().includes(filterProduct.toLowerCase()));
 
-  // sort
   orders.sort((a, b) => {
     let va = a[sortField], vb = b[sortField];
     if (sortField === 'price') { va = cleanPrice(va); vb = cleanPrice(vb); }
@@ -632,7 +690,7 @@ function bulkUpdateStatus(status) {
   });
   selectedRows.clear();
   saveData(); updateStats(); renderOrdersTable();
-  toast('success', 'Status Updated', `${selectedRows.size || 'Selected'} orders → ${status}`);
+  toast('success', 'Status Updated', `Selected orders → ${status}`);
 }
 
 function bulkDelete() {
@@ -661,7 +719,7 @@ function handleSortClick(field) {
 }
 
 // ─────────────────────────────────────────
-//  EXPORT CSV
+//  EXPORT CSV / JSON
 // ─────────────────────────────────────────
 function exportCSV() {
   const cols = ['name','phone','city','product','price','status','sentAt'];
@@ -757,10 +815,11 @@ function clearAllData() {
 }
 
 // ─────────────────────────────────────────
-//  DRAG & DROP UPLOAD
+//  DRAG & DROP + FILE UPLOAD
+//  (handles both .txt and images for OCR)
 // ─────────────────────────────────────────
 function initDropZone() {
-  const zone = document.getElementById('drop-zone');
+  const zone  = document.getElementById('drop-zone');
   const input = document.getElementById('file-input');
 
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -772,16 +831,133 @@ function initDropZone() {
     if (file) readFile(file);
   });
   zone.addEventListener('click', () => input.click());
-  input.addEventListener('change', () => { if (input.files[0]) readFile(input.files[0]); });
+  zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+  input.addEventListener('change', () => { if (input.files[0]) readFile(input.files[0]); input.value = ''; });
 }
 
+/** Route file to OCR or plain-text reader based on type */
 function readFile(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('message-input').value = e.target.result;
-    toast('info', 'File loaded', file.name);
-  };
-  reader.readAsText(file);
+  const isImage = /^image\/(png|jpeg|webp)/.test(file.type) || /\.(png|jpg|jpeg|webp)$/i.test(file.name);
+  const isText  = file.type === 'text/plain' || /\.(txt|csv)$/i.test(file.name);
+
+  if (isImage) {
+    runOCR(file);
+  } else if (isText) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('message-input').value = e.target.result;
+      toast('info', 'File loaded', file.name);
+    };
+    reader.readAsText(file);
+  } else {
+    toast('error', 'Unsupported file', 'Use .txt, .png, .jpg, .jpeg, or .webp');
+  }
+}
+
+// ─────────────────────────────────────────
+//  OCR  (Tesseract.js browser-side)
+// ─────────────────────────────────────────
+
+/** Remove the current OCR image and reset the preview UI */
+function removeOcrImage() {
+  const wrap = document.getElementById('ocr-preview-wrap');
+  const img  = document.getElementById('ocr-preview-img');
+  wrap.style.display = 'none';
+  img.src = '';
+  // Reset all sub-states
+  setOcrState('idle');
+}
+
+/** Show the image preview panel and set up the <img> */
+function showOcrPreview(objectUrl) {
+  const wrap = document.getElementById('ocr-preview-wrap');
+  const img  = document.getElementById('ocr-preview-img');
+  img.src = objectUrl;
+  wrap.style.display = 'block';
+  setOcrState('spinner', 'Initializing OCR…');
+}
+
+/**
+ * Set the OCR status area to one of:
+ *   'idle' | 'spinner' (text?) | 'progress' (pct?) | 'done' | 'error' (msg?)
+ */
+function setOcrState(state, data) {
+  const spinner    = document.getElementById('ocr-spinner');
+  const statusText = document.getElementById('ocr-status-text');
+  const progressWrap = document.getElementById('ocr-progress-wrap');
+  const bar        = document.getElementById('ocr-progress-bar');
+  const label      = document.getElementById('ocr-progress-label');
+  const done       = document.getElementById('ocr-done');
+  const error      = document.getElementById('ocr-error');
+
+  // Hide all first
+  spinner.style.display = 'none';
+  progressWrap.style.display = 'none';
+  done.style.display = 'none';
+  error.style.display = 'none';
+
+  if (state === 'spinner') {
+    spinner.style.display = 'flex';
+    if (statusText) statusText.textContent = data || 'Processing…';
+  } else if (state === 'progress') {
+    progressWrap.style.display = 'flex';
+    const pct = Math.round((data || 0) * 100);
+    bar.style.width = pct + '%';
+    label.textContent = pct + '%';
+  } else if (state === 'done') {
+    done.style.display = 'flex';
+  } else if (state === 'error') {
+    error.style.display = 'block';
+    error.textContent = '❌ ' + (data || 'OCR failed');
+  }
+  // 'idle' → all hidden (already done above)
+}
+
+/** Run Tesseract.js OCR on the given image File */
+async function runOCR(file) {
+  // Build object URL for preview
+  const objectUrl = URL.createObjectURL(file);
+  showOcrPreview(objectUrl);
+
+  try {
+    // Tesseract.js v5 — createWorker is global after CDN load
+    const worker = await Tesseract.createWorker('ara+fra+eng', 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          setOcrState('progress', m.progress);
+        } else if (m.status) {
+          // Show status text while loading models
+          setOcrState('spinner', m.status.charAt(0).toUpperCase() + m.status.slice(1) + '…');
+        }
+      }
+    });
+
+    const { data: { text } } = await worker.recognize(file);
+    await worker.terminate();
+
+    // Revoke object URL to free memory
+    URL.revokeObjectURL(objectUrl);
+
+    if (!text || !text.trim()) {
+      setOcrState('error', 'No text detected in this image.');
+      toast('error', 'OCR empty', 'No readable text found in the screenshot.');
+      return;
+    }
+
+    // Populate textarea with extracted text
+    const textarea = document.getElementById('message-input');
+    textarea.value = text.trim();
+    // Trigger input event so any listeners are aware
+    textarea.dispatchEvent(new Event('input'));
+
+    setOcrState('done');
+    toast('success', 'OCR complete', 'Text extracted — review and click Analyze.');
+  } catch (err) {
+    URL.revokeObjectURL(objectUrl);
+    setOcrState('error', err.message || 'OCR failed');
+    toast('error', 'OCR Error', err.message || 'Could not process image.');
+    console.error('OCR error:', err);
+  }
 }
 
 // ─────────────────────────────────────────
@@ -798,6 +974,7 @@ function handleFilterProduct(e) { filterProduct = e.target.value; renderOrdersTa
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   loadSettings();
+  loadReference();   // ← restore persisted reference toggle
   updateStats();
   initDropZone();
   navigate('extract');
@@ -818,7 +995,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modal) modal.classList.remove('open');
     });
   });
-  // Close modal on overlay click
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => {
       if (e.target === overlay) overlay.classList.remove('open');
@@ -828,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Analyze button
   document.getElementById('btn-analyze').addEventListener('click', handleAnalyze);
 
-  // Send all pending valid orders
+  // Send all valid pending
   document.getElementById('btn-send-all').addEventListener('click', async () => {
     const valid = pendingOrders.filter(o => validateOrder(o).length === 0);
     if (!valid.length) { toast('error', 'No valid orders', 'Fix validation errors first.'); return; }
@@ -837,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Export buttons
+  // Export
   document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
   document.getElementById('btn-export-json').addEventListener('click', exportJSON);
 
@@ -867,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pending bulk send
   document.getElementById('btn-send-selected').addEventListener('click', sendSelectedPending);
 
-  // Settings save
+  // Settings
   document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
   document.getElementById('btn-clear-data').addEventListener('click', clearAllData);
 });
