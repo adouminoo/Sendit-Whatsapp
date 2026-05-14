@@ -49,7 +49,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <span class="sidebar-version">v1.0 · Sendit.ma</span>
+      <span class="sidebar-version">v2.0 · Sendit.ma</span>
     </div>
   </aside>
 
@@ -126,21 +126,52 @@
         <div class="panel">
           <div class="panel-header">
             <h2 class="card-title">📥 Extract Orders from WhatsApp</h2>
-            <p class="card-subtitle">Paste a WhatsApp message (Darija, French, Arabic or mixed) and let AI extract order data.</p>
+            <p class="card-subtitle">Paste a message, upload a .txt file, or drop a screenshot — Darija, French, Arabic or mixed.</p>
           </div>
           <div class="panel-body">
 
-            <!-- Drop zone -->
-            <div id="drop-zone" class="drop-zone">
+            <!-- ── UPLOAD ZONE (txt + image) ────────────────── -->
+            <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Upload file or image">
               <div class="drop-zone-inner">
                 <div class="drop-zone-icon">📂</div>
-                <p class="drop-zone-text">Drop a <strong>.txt</strong> file here or <u>click to browse</u></p>
-                <p class="drop-zone-hint">or paste your message below</p>
+                <p class="drop-zone-text">
+                  Drop a <strong>.txt</strong> or <strong>screenshot</strong> here, or <u>click to browse</u>
+                </p>
+                <p class="drop-zone-hint">Supports .txt, .png, .jpg, .jpeg, .webp — or paste below</p>
               </div>
-              <input type="file" id="file-input" accept=".txt,.csv" style="display:none" />
+              <!-- Accept both text files AND images -->
+              <input type="file" id="file-input" accept=".txt,.csv,.png,.jpg,.jpeg,.webp" style="display:none" />
             </div>
 
-            <!-- Message input -->
+            <!-- ── IMAGE PREVIEW + OCR STATUS ──────────────── -->
+            <div id="ocr-preview-wrap" class="ocr-preview-wrap" style="display:none">
+              <div class="ocr-preview-header">
+                <span class="ocr-preview-label">📸 Screenshot Preview</span>
+                <button id="ocr-remove-btn" class="btn btn-ghost btn-sm ocr-remove-btn" onclick="removeOcrImage()">✕ Remove</button>
+              </div>
+              <div class="ocr-preview-body">
+                <img id="ocr-preview-img" class="ocr-preview-img" src="" alt="Uploaded screenshot" />
+                <div id="ocr-status" class="ocr-status">
+                  <div id="ocr-spinner" class="ocr-spinner" style="display:none">
+                    <span class="spinner"></span>
+                    <span id="ocr-status-text" class="ocr-status-text">Initializing OCR…</span>
+                  </div>
+                  <div id="ocr-progress-wrap" class="ocr-progress-wrap" style="display:none">
+                    <div class="progress-bar-wrap">
+                      <div id="ocr-progress-bar" class="progress-bar" style="width:0%"></div>
+                    </div>
+                    <span id="ocr-progress-label" class="ocr-progress-label">0%</span>
+                  </div>
+                  <div id="ocr-done" class="ocr-done" style="display:none">
+                    <span class="ocr-done-icon">✅</span>
+                    <span>OCR complete — text loaded below</span>
+                  </div>
+                  <div id="ocr-error" class="ocr-error" style="display:none"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── MESSAGE TEXTAREA ─────────────────────────── -->
             <textarea
               id="message-input"
               class="message-textarea"
@@ -148,7 +179,30 @@
               rows="7"
             ></textarea>
 
-            <!-- Actions -->
+            <!-- ── REFERENCE TOGGLE ─────────────────────────── -->
+            <div class="reference-section">
+              <div class="reference-label">
+                <span class="reference-label-icon">🏷️</span>
+                <span>Reference</span>
+                <span id="reference-active-badge" class="reference-none-badge">None</span>
+              </div>
+              <div class="reference-toggles" role="group" aria-label="Select reference">
+                <button class="ref-toggle" data-ref="adam" data-value="adam-BOT" onclick="selectReference(this)">
+                  <span class="ref-toggle-dot"></span>
+                  Adam
+                </button>
+                <button class="ref-toggle" data-ref="amine" data-value="Amine-BOT" onclick="selectReference(this)">
+                  <span class="ref-toggle-dot"></span>
+                  Amine
+                </button>
+                <button class="ref-toggle" data-ref="yassir" data-value="Yassir-BOT" onclick="selectReference(this)">
+                  <span class="ref-toggle-dot"></span>
+                  Yassir
+                </button>
+              </div>
+            </div>
+
+            <!-- ── ACTION BUTTONS ───────────────────────────── -->
             <div class="extract-actions">
               <button id="btn-analyze" class="btn btn-primary">
                 🔍 Analyze
@@ -220,9 +274,9 @@
             <div class="orders-toolbar">
               <input
                 id="search-input"
-                class="search-input"
+                class="filter-input"
                 type="text"
-                placeholder="🔎 Search name, phone, city, product…"
+                placeholder="Search name, phone, city…"
               />
 
               <select id="filter-status" class="filter-select">
@@ -441,7 +495,9 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=3"></script>
-  <script src="script.js?v=3"></script>
+  <script src="config.js?v=4"></script>
+  <!-- Tesseract.js for browser-side OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
