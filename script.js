@@ -11,9 +11,9 @@ const CITY_MAP = {
 
 // City aliases/shortcuts (Darija / common abbreviations)
 const CITY_ALIASES = {
-  "casa": "casablanca - centre ville",
-  "casablanca": "casablanca - centre ville",
-  "csa": "casablanca - centre ville",
+  "casa": "casablanca",
+  "casablanca": "casablanca",
+  "csa": "casablanca",
   "rabat": "rabat",
   "fes": "fes", "fès": "fes",
   "meknes": "meknes", "meknès": "meknes",
