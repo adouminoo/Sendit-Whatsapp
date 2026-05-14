@@ -222,10 +222,7 @@ function setText(id, val) {
 //  AI EXTRACTION  (OpenAI)
 // ─────────────────────────────────────────
 async function extractOrders(text) {
-  const apiKey = (typeof CONFIG !== 'undefined') ? CONFIG.OPENAI_API_KEY : '';
-  if (!apiKey || apiKey.startsWith('sk-YOUR')) {
-    throw new Error('Please set your OpenAI API key in config.js');
-  }
+  
 
   const prompt = `Extract order information from this Moroccan WhatsApp message.
 The message may be in Darija, French, Arabic, or mixed.
@@ -263,12 +260,12 @@ Format:
 Message:
 ${text}`;
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
+  const res = await fetch(CONFIG.API_PROXY_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  }, 
+     
     body: JSON.stringify({
       model: CONFIG.OPENAI_MODEL || 'gpt-4o-mini',
       max_tokens: 1000,
@@ -733,7 +730,6 @@ function renderCustomers() {
 // ─────────────────────────────────────────
 function loadSettings() {
   if (typeof CONFIG === 'undefined') return;
-  setVal('setting-openai', CONFIG.OPENAI_API_KEY || '');
   setVal('setting-sendit-public', CONFIG.SENDIT_PUBLIC_KEY || '');
   setVal('setting-sendit-secret', CONFIG.SENDIT_SECRET_KEY || '');
   setVal('setting-pickup', CONFIG.PICKUP_DISTRICT_ID || 31);
@@ -746,7 +742,6 @@ function setVal(id, val) {
 
 function saveSettings() {
   if (typeof CONFIG === 'undefined') { toast('error', 'Config not found'); return; }
-  CONFIG.OPENAI_API_KEY     = document.getElementById('setting-openai').value.trim();
   CONFIG.SENDIT_PUBLIC_KEY  = document.getElementById('setting-sendit-public').value.trim();
   CONFIG.SENDIT_SECRET_KEY  = document.getElementById('setting-sendit-secret').value.trim();
   CONFIG.PICKUP_DISTRICT_ID = parseInt(document.getElementById('setting-pickup').value);
