@@ -233,8 +233,26 @@ The message may be in Darija, French, Arabic, or mixed.
 STRICT RULES:
 - name: customer name (if missing → "Client")
 - phone: Moroccan phone as string, e.g. "0612345678" (strip +212, keep 10 digits starting with 0)
-- city: normalize → "casa" → "casablanca", "rbat" → "rabat", etc.
-- product: what the customer wants to buy
+- city: detect the MOST SPECIFIC Moroccan delivery area possible
+
+IMPORTANT:
+If the message contains Casablanca neighborhoods like:
+maarif, anfa, bourgogne, hay hassani, california, oasis, racine, etc,
+return them in this EXACT format:
+
+"casablanca - maarif"
+"casablanca - anfa"
+"casablanca - bourgogne"
+
+DO NOT return only "casablanca" or "casa" if a neighborhood exists.
+
+Examples:
+"casa maarif" → "casablanca - maarif"
+"maarif" → "casablanca - maarif"
+"casa bourgogne" → "casablanca - bourgogne"
+"anfa" → "casablanca - anfa"
+
+For other cities, return the most specific known area possible.- product: what the customer wants to buy
 - price: NUMBER ONLY (e.g. 250, not "250 dh")
 - notes: short AI summary in English (1-2 sentences about the customer's request/tone)
 
