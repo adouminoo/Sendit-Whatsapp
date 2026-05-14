@@ -1016,8 +1016,19 @@ async function createOcrWorker() {
     throw new Error('OCR library is not loaded. Refresh the page and try again.');
   }
 
+  async function _init() {
+    // Tesseract.js v5: createWorker takes an options object (no positional lang/OEM args).
+    // Language loading must be done with loadLanguage() + initialize() after creation.
+    const worker = await Tesseract.createWorker({
+      logger: () => {}   // suppress internal logs; per-item logger set at recognize() time
+    });
+    await worker.loadLanguage('ara+fra+eng');
+    await worker.initialize('ara+fra+eng');
+    return worker;
+  }
+
   return withTimeout(
-    Tesseract.createWorker('ara+fra+eng', 1),
+    _init(),
     OCR_WORKER_TIMEOUT_MS,
     'OCR took too long to start. Refresh and try fewer screenshots.'
   );
@@ -1250,15 +1261,16 @@ async function runAllOCR() {
         setOverallProgress(doneCount, pending.length, true, `Running OCR ${doneCount + 1} / ${pending.length}...`);
         renderGallery();
 
+        // Tesseract.js v5: logger goes in createWorker options, not in recognize().
+        // We patch the worker logger per-item for progress tracking.
+        worker.logger = m => {
+          if (m.status === 'recognizing text') {
+            item.progress = Math.max(0.02, m.progress || 0);
+            updateThumbProgress(item.id, item.progress);
+          }
+        };
         const result = await withTimeout(
-          worker.recognize(item.optimizedFile, {}, {
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                item.progress = Math.max(0.02, m.progress || 0);
-                updateThumbProgress(item.id, item.progress);
-              }
-            }
-          }),
+          worker.recognize(item.optimizedFile),
           OCR_ITEM_TIMEOUT_MS,
           'OCR timed out on this screenshot. It may be too tall or too blurry.'
         );
