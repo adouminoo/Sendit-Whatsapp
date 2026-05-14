@@ -1587,3 +1587,419 @@ input[type="checkbox"] {
   border-radius: 2px;
   transition: all 0.2s;
 }
+
+/* =====================================================
+   ADDITIONS v3.1 - Multi Screenshot OCR Gallery
+   Required by the multi-OCR script.js update only.
+   ===================================================== */
+
+/* Gallery shell */
+#ocr-gallery-wrap,
+.ocr-gallery-wrap {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-input);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: ocrGalleryIn 0.24s ease both;
+}
+
+.ocr-gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.ocr-gallery-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+#ocr-gallery-count,
+.ocr-gallery-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(61,126,255,0.28);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ocr-gallery-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#ocr-run-btn {
+  min-height: 34px;
+}
+
+.ocr-run-spinner {
+  margin-right: 2px;
+}
+
+#ocr-run-label {
+  line-height: 1;
+}
+
+/* Overall OCR progress */
+#ocr-overall-progress,
+.ocr-overall-progress {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(61,126,255,0.06);
+}
+
+.ocr-overall-track {
+  flex: 1;
+  min-width: 120px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--border-soft);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+#ocr-overall-bar,
+.ocr-overall-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  transition: width 0.28s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#ocr-overall-bar::after,
+.ocr-overall-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.32), transparent);
+  transform: translateX(-100%);
+  animation: ocrShimmer 1.25s linear infinite;
+}
+
+#ocr-overall-label,
+.ocr-overall-label {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+/* Thumbnail grid */
+#ocr-thumb-grid,
+.ocr-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.ocr-thumb {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  overflow: hidden;
+  cursor: grab;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.24);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  animation: ocrThumbIn 0.22s ease both;
+}
+
+.ocr-thumb:hover {
+  transform: translateY(-2px);
+  border-color: rgba(61,126,255,0.34);
+  box-shadow: var(--shadow);
+}
+
+.ocr-thumb:active {
+  cursor: grabbing;
+}
+
+.ocr-thumb--dragging {
+  opacity: 0.62;
+  transform: scale(0.98);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow);
+}
+
+.ocr-thumb-status--running {
+  border-color: rgba(61,126,255,0.55);
+  box-shadow: 0 0 0 1px rgba(61,126,255,0.18), var(--shadow-sm);
+}
+
+.ocr-thumb-status--done {
+  border-color: rgba(34,197,94,0.38);
+}
+
+.ocr-thumb-status--error {
+  border-color: rgba(239,68,68,0.42);
+}
+
+.ocr-thumb-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.ocr-thumb-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.ocr-thumb:hover .ocr-thumb-img {
+  transform: scale(1.025);
+}
+
+.ocr-thumb-status--done .ocr-thumb-img,
+.ocr-thumb-status--error .ocr-thumb-img {
+  filter: saturate(0.86) brightness(0.84);
+}
+
+/* OCR overlays */
+.ocr-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(11,13,18,0.72);
+  backdrop-filter: blur(3px);
+  color: var(--text-primary);
+}
+
+.ocr-thumb-overlay--error {
+  background: rgba(127,29,29,0.56);
+  color: #fff;
+}
+
+.ocr-thumb-pct {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.spinner--lg {
+  width: 30px;
+  height: 30px;
+  border-width: 3px;
+  border-top-color: var(--accent);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+
+/* Per-thumbnail progress */
+.ocr-thumb-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.ocr-thumb-progress-bar {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  transition: width 0.2s ease;
+}
+
+/* Thumbnail footer and badges */
+.ocr-thumb-footer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 9px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.ocr-thumb-index {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ocr-thumb-badge {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ocr-thumb-badge--pending {
+  border-color: rgba(245,158,11,0.28);
+  background: rgba(245,158,11,0.1);
+  color: var(--yellow);
+}
+
+.ocr-thumb-badge--done {
+  border-color: rgba(34,197,94,0.28);
+  background: rgba(34,197,94,0.1);
+  color: var(--green);
+}
+
+.ocr-thumb-badge--error {
+  border-color: rgba(239,68,68,0.3);
+  background: rgba(239,68,68,0.1);
+  color: var(--red);
+}
+
+.ocr-thumb-remove {
+  justify-self: end;
+  width: 25px;
+  height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.ocr-thumb-remove:hover {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.25);
+  color: var(--red);
+  transform: scale(1.06);
+}
+
+/* Helpful optional empty state if your HTML includes it */
+.ocr-gallery-empty {
+  padding: 22px 14px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+/* Animations */
+@keyframes ocrGalleryIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ocrThumbIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ocrShimmer {
+  to { transform: translateX(100%); }
+}
+
+/* Mobile responsive OCR gallery */
+@media (max-width: 720px) {
+  .ocr-gallery-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ocr-gallery-actions {
+    justify-content: stretch;
+  }
+
+  .ocr-gallery-actions .btn,
+  #ocr-run-btn {
+    flex: 1;
+    width: 100%;
+  }
+
+  #ocr-overall-progress,
+  .ocr-overall-progress {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #ocr-overall-label,
+  .ocr-overall-label {
+    white-space: normal;
+  }
+
+  #ocr-thumb-grid,
+  .ocr-thumb-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 430px) {
+  #ocr-thumb-grid,
+  .ocr-thumb-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ocr-thumb-img-wrap {
+    aspect-ratio: 16 / 11;
+  }
+
+  .ocr-thumb-footer {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .ocr-thumb-badge {
+    font-size: 0.7rem;
+  }
+}
