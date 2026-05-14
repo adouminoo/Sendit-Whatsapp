@@ -23,7 +23,7 @@
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-section-label">Menu</div>
+      <div class="nav-section">Menu</div>
 
       <div class="nav-item" data-view="extract">
         <span class="nav-icon">🔍</span>
@@ -40,7 +40,7 @@
         <span class="nav-label">Customers</span>
       </div>
 
-      <div class="nav-section-label" style="margin-top:16px">Config</div>
+      <div class="nav-section" style="margin-top:16px">Config</div>
 
       <div class="nav-item" data-view="settings">
         <span class="nav-icon">⚙️</span>
@@ -56,7 +56,7 @@
   <!-- ═══════════════════════════════════════════
        MAIN WRAPPER
   ════════════════════════════════════════════ -->
-  <div class="main-wrapper">
+  <div class="main-content">
 
     <!-- ─── TOPBAR ─────────────────────────────── -->
     <header class="topbar">
@@ -82,12 +82,12 @@
     </header>
 
     <!-- ─── CONTENT AREA ──────────────────────── -->
-    <main class="content">
+    <main class="page-content">
 
       <!-- ═══════════════════════════════════════
            DASHBOARD STATS CARDS (always visible)
       ════════════════════════════════════════ -->
-      <section class="stats-row">
+      <section class="stats-grid">
         <div class="stat-card">
           <div class="stat-card-icon">📦</div>
           <div class="stat-card-body">
@@ -123,12 +123,12 @@
       ════════════════════════════════════════ -->
       <section id="view-extract" class="view">
 
-        <div class="card">
-          <div class="card-header">
+        <div class="panel">
+          <div class="panel-header">
             <h2 class="card-title">📥 Extract Orders from WhatsApp</h2>
             <p class="card-subtitle">Paste a WhatsApp message (Darija, French, Arabic or mixed) and let AI extract order data.</p>
           </div>
-          <div class="card-body">
+          <div class="panel-body">
 
             <!-- Drop zone -->
             <div id="drop-zone" class="drop-zone">
@@ -171,11 +171,11 @@
         </div>
 
         <!-- Pending orders table -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-header">
+        <div class="panel" style="margin-top:20px">
+          <div class="panel-header">
             <h2 class="card-title">🗂 Pending Orders</h2>
           </div>
-          <div class="card-body" style="padding:0">
+          <div class="panel-body" style="padding:0">
 
             <div id="pending-empty" class="empty-state">
               <div class="empty-icon">📋</div>
@@ -210,11 +210,11 @@
       ════════════════════════════════════════ -->
       <section id="view-orders" class="view">
 
-        <div class="card">
-          <div class="card-header">
+        <div class="panel">
+          <div class="panel-header">
             <h2 class="card-title">📋 Order Management</h2>
           </div>
-          <div class="card-body">
+          <div class="panel-body">
 
             <!-- Toolbar -->
             <div class="orders-toolbar">
@@ -266,8 +266,8 @@
         </div>
 
         <!-- Orders table -->
-        <div class="card" style="margin-top:12px">
-          <div class="card-body" style="padding:0">
+        <div class="panel" style="margin-top:12px">
+          <div class="panel-body" style="padding:0">
 
             <div id="orders-empty" class="empty-state">
               <div class="empty-icon">📭</div>
@@ -314,8 +314,8 @@
       ════════════════════════════════════════ -->
       <section id="view-customers" class="view">
 
-        <div class="card">
-          <div class="card-header">
+        <div class="panel">
+          <div class="panel-header">
             <h2 class="card-title">👥 Customers</h2>
             <p class="card-subtitle">Customer profiles are automatically built from sent orders.</p>
           </div>
@@ -335,12 +335,12 @@
       ════════════════════════════════════════ -->
       <section id="view-settings" class="view">
 
-        <div class="card">
-          <div class="card-header">
+        <div class="panel">
+          <div class="panel-header">
             <h2 class="card-title">⚙️ Settings</h2>
             <p class="card-subtitle">Configure your API credentials. Changes apply to this session only. Edit <code>config.js</code> for permanent changes.</p>
           </div>
-          <div class="card-body">
+          <div class="panel-body">
 
             <div class="settings-grid">
 
@@ -408,7 +408,7 @@
 
         <!-- Danger zone info card -->
         <div class="card card--danger" style="margin-top:20px">
-          <div class="card-body">
+          <div class="panel-body">
             <h3 style="margin:0 0 8px;color:var(--red,#e74c3c)">⚠️ Danger Zone</h3>
             <p style="margin:0;color:var(--text-muted);font-size:0.88rem">
               "Clear All Data" will permanently delete all orders and customer profiles from your browser's localStorage.
