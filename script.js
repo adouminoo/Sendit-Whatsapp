@@ -814,150 +814,394 @@ function clearAllData() {
   toast('info', 'Data Cleared');
 }
 
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 //  DRAG & DROP + FILE UPLOAD
-//  (handles both .txt and images for OCR)
-// ─────────────────────────────────────────
+//  Routes .txt → text reader, images → multi-OCR queue
+// ═══════════════════════════════════════════════════════
+
 function initDropZone() {
   const zone  = document.getElementById('drop-zone');
   const input = document.getElementById('file-input');
 
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', e => {
+    // Only remove if leaving the zone itself (not a child element)
+    if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover');
+  });
   zone.addEventListener('drop', e => {
     e.preventDefault();
     zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) readFile(file);
+    handleFileList(e.dataTransfer.files);
   });
   zone.addEventListener('click', () => input.click());
   zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
-  input.addEventListener('change', () => { if (input.files[0]) readFile(input.files[0]); input.value = ''; });
-}
-
-/** Route file to OCR or plain-text reader based on type */
-function readFile(file) {
-  const isImage = /^image\/(png|jpeg|webp)/.test(file.type) || /\.(png|jpg|jpeg|webp)$/i.test(file.name);
-  const isText  = file.type === 'text/plain' || /\.(txt|csv)$/i.test(file.name);
-
-  if (isImage) {
-    runOCR(file);
-  } else if (isText) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById('message-input').value = e.target.result;
-      toast('info', 'File loaded', file.name);
-    };
-    reader.readAsText(file);
-  } else {
-    toast('error', 'Unsupported file', 'Use .txt, .png, .jpg, .jpeg, or .webp');
-  }
-}
-
-// ─────────────────────────────────────────
-//  OCR  (Tesseract.js browser-side)
-// ─────────────────────────────────────────
-
-/** Remove the current OCR image and reset the preview UI */
-function removeOcrImage() {
-  const wrap = document.getElementById('ocr-preview-wrap');
-  const img  = document.getElementById('ocr-preview-img');
-  wrap.style.display = 'none';
-  img.src = '';
-  // Reset all sub-states
-  setOcrState('idle');
-}
-
-/** Show the image preview panel and set up the <img> */
-function showOcrPreview(objectUrl) {
-  const wrap = document.getElementById('ocr-preview-wrap');
-  const img  = document.getElementById('ocr-preview-img');
-  img.src = objectUrl;
-  wrap.style.display = 'block';
-  setOcrState('spinner', 'Initializing OCR…');
+  input.addEventListener('change', () => {
+    if (input.files.length) handleFileList(input.files);
+    input.value = ''; // reset so same files can be re-added
+  });
 }
 
 /**
- * Set the OCR status area to one of:
- *   'idle' | 'spinner' (text?) | 'progress' (pct?) | 'done' | 'error' (msg?)
+ * Route a FileList: text files go straight to textarea,
+ * images accumulate in the OCR gallery queue.
  */
-function setOcrState(state, data) {
-  const spinner    = document.getElementById('ocr-spinner');
-  const statusText = document.getElementById('ocr-status-text');
-  const progressWrap = document.getElementById('ocr-progress-wrap');
-  const bar        = document.getElementById('ocr-progress-bar');
-  const label      = document.getElementById('ocr-progress-label');
-  const done       = document.getElementById('ocr-done');
-  const error      = document.getElementById('ocr-error');
-
-  // Hide all first
-  spinner.style.display = 'none';
-  progressWrap.style.display = 'none';
-  done.style.display = 'none';
-  error.style.display = 'none';
-
-  if (state === 'spinner') {
-    spinner.style.display = 'flex';
-    if (statusText) statusText.textContent = data || 'Processing…';
-  } else if (state === 'progress') {
-    progressWrap.style.display = 'flex';
-    const pct = Math.round((data || 0) * 100);
-    bar.style.width = pct + '%';
-    label.textContent = pct + '%';
-  } else if (state === 'done') {
-    done.style.display = 'flex';
-  } else if (state === 'error') {
-    error.style.display = 'block';
-    error.textContent = '❌ ' + (data || 'OCR failed');
+function handleFileList(files) {
+  const images = [];
+  for (const file of files) {
+    const isImage = /^image\/(png|jpeg|webp)/.test(file.type) || /\.(png|jpg|jpeg|webp)$/i.test(file.name);
+    const isText  = file.type === 'text/plain' || /\.(txt|csv)$/i.test(file.name);
+    if (isImage) {
+      images.push(file);
+    } else if (isText) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('message-input').value = ev.target.result;
+        toast('info', 'File loaded', file.name);
+      };
+      reader.readAsText(file);
+    } else {
+      toast('error', 'Unsupported file', `${file.name} — use .txt, .png, .jpg, .jpeg, or .webp`);
+    }
   }
-  // 'idle' → all hidden (already done above)
+  if (images.length) addImagesToGallery(images);
 }
 
-/** Run Tesseract.js OCR on the given image File */
-async function runOCR(file) {
-  // Build object URL for preview
-  const objectUrl = URL.createObjectURL(file);
-  showOcrPreview(objectUrl);
 
+// ═══════════════════════════════════════════════════════
+//  MULTI-SCREENSHOT OCR GALLERY
+//
+//  Each item in ocrQueue:
+//  {
+//    id:         unique string,
+//    file:       File object,
+//    objectUrl:  blob URL for preview (revoked after OCR),
+//    status:     'pending' | 'running' | 'done' | 'error',
+//    progress:   0–1 (recognizing text phase),
+//    text:       extracted string (after done),
+//    error:      error message (after error)
+//  }
+// ═══════════════════════════════════════════════════════
+
+let ocrQueue    = [];   // array of queue items (see above)
+let ocrRunning  = false; // guard against double-start
+
+// ── ADD images to the gallery ────────────────────────
+function addImagesToGallery(files) {
+  for (const file of files) {
+    // Deduplicate by name+size (simple heuristic)
+    const alreadyIn = ocrQueue.some(q => q.file.name === file.name && q.file.size === file.size);
+    if (alreadyIn) continue;
+
+    const item = {
+      id:        'ocr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      file,
+      objectUrl: URL.createObjectURL(file),
+      status:    'pending',
+      progress:  0,
+      text:      '',
+      error:     ''
+    };
+    ocrQueue.push(item);
+  }
+  renderGallery();
+  showGalleryWrap();
+}
+
+// ── CLEAR all screenshots and reset ─────────────────
+function clearAllScreenshots() {
+  // Revoke all object URLs to prevent memory leaks
+  ocrQueue.forEach(item => {
+    if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+  });
+  ocrQueue = [];
+  ocrRunning = false;
+  renderGallery();
+  document.getElementById('ocr-gallery-wrap').style.display = 'none';
+  setOverallProgress(0, 0, false);
+}
+
+// ── REMOVE a single screenshot from the queue ───────
+function removeScreenshot(id) {
+  const idx = ocrQueue.findIndex(q => q.id === id);
+  if (idx === -1) return;
+  const item = ocrQueue[idx];
+  // Revoke its URL
+  if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+  ocrQueue.splice(idx, 1);
+  renderGallery();
+  if (!ocrQueue.length) {
+    document.getElementById('ocr-gallery-wrap').style.display = 'none';
+  }
+}
+
+// ── SHOW the gallery wrap ────────────────────────────
+function showGalleryWrap() {
+  document.getElementById('ocr-gallery-wrap').style.display = 'block';
+}
+
+// ── RENDER the full thumbnail grid ──────────────────
+function renderGallery() {
+  const grid       = document.getElementById('ocr-thumb-grid');
+  const countBadge = document.getElementById('ocr-gallery-count');
+  const runBtn     = document.getElementById('ocr-run-btn');
+  const total      = ocrQueue.length;
+
+  // Update count badge
+  if (countBadge) countBadge.textContent = total;
+
+  // Show "Run OCR" button only if there are pending items and not currently running
+  const hasPending = ocrQueue.some(q => q.status === 'pending');
+  if (runBtn) runBtn.style.display = (hasPending && !ocrRunning) ? 'inline-flex' : 'none';
+
+  if (!total) {
+    grid.innerHTML = '';
+    return;
+  }
+
+  grid.innerHTML = ocrQueue.map((item, index) => {
+    const statusClass = `ocr-thumb-status--${item.status}`;
+    const statusIcon  = {
+      pending: '⏳',
+      running: '',        // spinner rendered separately
+      done:    '✅',
+      error:   '❌'
+    }[item.status] || '';
+
+    const pct = Math.round(item.progress * 100);
+    const isRunning = item.status === 'running';
+    const isDone    = item.status === 'done';
+    const isError   = item.status === 'error';
+
+    return `
+    <div class="ocr-thumb ${statusClass}" id="thumb-${item.id}" draggable="true"
+         ondragstart="thumbDragStart(event,'${item.id}')"
+         ondragover="thumbDragOver(event)"
+         ondrop="thumbDrop(event,'${item.id}')">
+
+      <!-- Thumbnail image -->
+      <div class="ocr-thumb-img-wrap">
+        <img class="ocr-thumb-img" src="${item.objectUrl}" alt="Screenshot ${index + 1}" loading="lazy" />
+
+        <!-- Overlay: spinner while running -->
+        ${isRunning ? `
+        <div class="ocr-thumb-overlay">
+          <span class="spinner spinner--lg"></span>
+          <span class="ocr-thumb-pct">${pct}%</span>
+        </div>` : ''}
+
+        <!-- Overlay: error state -->
+        ${isError ? `
+        <div class="ocr-thumb-overlay ocr-thumb-overlay--error">
+          <span style="font-size:1.4rem">❌</span>
+        </div>` : ''}
+
+        <!-- Progress bar at bottom of image (running) -->
+        ${isRunning ? `
+        <div class="ocr-thumb-progress">
+          <div class="ocr-thumb-progress-bar" style="width:${pct}%"></div>
+        </div>` : ''}
+      </div>
+
+      <!-- Thumb footer -->
+      <div class="ocr-thumb-footer">
+        <span class="ocr-thumb-index">#${index + 1}</span>
+        ${isDone   ? `<span class="ocr-thumb-badge ocr-thumb-badge--done">Done</span>` : ''}
+        ${isError  ? `<span class="ocr-thumb-badge ocr-thumb-badge--error" title="${item.error}">Error</span>` : ''}
+        ${item.status === 'pending' ? `<span class="ocr-thumb-badge ocr-thumb-badge--pending">Pending</span>` : ''}
+        <button class="ocr-thumb-remove" title="Remove" onclick="removeScreenshot('${item.id}')">✕</button>
+      </div>
+
+    </div>`;
+  }).join('');
+}
+
+// ── OVERALL progress bar (shown while OCR runs) ──────
+function setOverallProgress(done, total, visible) {
+  const wrap  = document.getElementById('ocr-overall-progress');
+  const bar   = document.getElementById('ocr-overall-bar');
+  const label = document.getElementById('ocr-overall-label');
+  if (!wrap) return;
+  wrap.style.display  = visible ? 'flex' : 'none';
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  if (bar)   bar.style.width    = pct + '%';
+  if (label) label.textContent = `Processing ${done} / ${total} (${pct}%)`;
+}
+
+// ── UPDATE run-button spinner ────────────────────────
+function setRunBtnState(running) {
+  const btn     = document.getElementById('ocr-run-btn');
+  const spinner = btn ? btn.querySelector('.ocr-run-spinner') : null;
+  const label   = document.getElementById('ocr-run-label');
+  if (!btn) return;
+  btn.disabled = running;
+  if (spinner) spinner.style.display = running ? 'inline-block' : 'none';
+  if (label)   label.textContent     = running ? 'Running…' : '▶ Run OCR';
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  RUN ALL OCR  —  sequential to avoid Tesseract worker
+//  conflicts and to keep memory usage low on mobile.
+//  We process images one at a time with a shared worker.
+// ═══════════════════════════════════════════════════════
+
+async function runAllOCR() {
+  if (ocrRunning) return;
+  const pending = ocrQueue.filter(q => q.status === 'pending');
+  if (!pending.length) { toast('info', 'Nothing to process', 'All screenshots are already done.'); return; }
+
+  ocrRunning = true;
+  setRunBtnState(true);
+  setOverallProgress(0, pending.length, true);
+  renderGallery();
+
+  // Create ONE shared Tesseract worker for all images (much faster than spawning per image)
+  let worker;
   try {
-    // Tesseract.js v5 — createWorker is global after CDN load
-    const worker = await Tesseract.createWorker('ara+fra+eng', 1, {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          setOcrState('progress', m.progress);
-        } else if (m.status) {
-          // Show status text while loading models
-          setOcrState('spinner', m.status.charAt(0).toUpperCase() + m.status.slice(1) + '…');
-        }
-      }
+    worker = await Tesseract.createWorker('ara+fra+eng', 1, {
+      // No per-image logger here — we set it via recognize options below
     });
+  } catch (err) {
+    toast('error', 'OCR init failed', err.message);
+    ocrRunning = false;
+    setRunBtnState(false);
+    setOverallProgress(0, 0, false);
+    renderGallery();
+    return;
+  }
 
-    const { data: { text } } = await worker.recognize(file);
-    await worker.terminate();
+  let doneCount = 0;
 
-    // Revoke object URL to free memory
-    URL.revokeObjectURL(objectUrl);
+  for (const item of pending) {
+    // Mark as running
+    item.status   = 'running';
+    item.progress = 0;
+    renderGallery();
 
-    if (!text || !text.trim()) {
-      setOcrState('error', 'No text detected in this image.');
-      toast('error', 'OCR empty', 'No readable text found in the screenshot.');
-      return;
+    try {
+      const { data: { text } } = await worker.recognize(item.file, {}, {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            item.progress = m.progress;
+            // Lightweight DOM update — only update this thumb's progress bar
+            updateThumbProgress(item.id, m.progress);
+          }
+        }
+      });
+
+      // Revoke the object URL now that OCR is done (free memory)
+      URL.revokeObjectURL(item.objectUrl);
+      item.objectUrl = ''; // prevent double-revoke
+
+      item.text   = (text || '').trim();
+      item.status = item.text ? 'done' : 'error';
+      item.error  = item.text ? '' : 'No text detected';
+
+    } catch (err) {
+      if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+      item.objectUrl = '';
+      item.status = 'error';
+      item.error  = err.message || 'OCR failed';
+      console.error(`OCR failed for ${item.file.name}:`, err);
     }
 
-    // Populate textarea with extracted text
-    const textarea = document.getElementById('message-input');
-    textarea.value = text.trim();
-    // Trigger input event so any listeners are aware
-    textarea.dispatchEvent(new Event('input'));
-
-    setOcrState('done');
-    toast('success', 'OCR complete', 'Text extracted — review and click Analyze.');
-  } catch (err) {
-    URL.revokeObjectURL(objectUrl);
-    setOcrState('error', err.message || 'OCR failed');
-    toast('error', 'OCR Error', err.message || 'Could not process image.');
-    console.error('OCR error:', err);
+    doneCount++;
+    setOverallProgress(doneCount, pending.length, true);
+    renderGallery();
   }
+
+  // Terminate shared worker
+  try { await worker.terminate(); } catch(_) {}
+
+  ocrRunning = false;
+  setRunBtnState(false);
+  setOverallProgress(doneCount, pending.length, false);
+  renderGallery();
+
+  // Merge all extracted texts and populate textarea
+  mergeOcrTextToTextarea();
+
+  const successCount = ocrQueue.filter(q => q.status === 'done').length;
+  const errorCount   = ocrQueue.filter(q => q.status === 'error').length;
+  if (successCount > 0) {
+    toast('success', `OCR complete — ${successCount} screenshot${successCount > 1 ? 's' : ''}`,
+      errorCount > 0 ? `${errorCount} failed. Text loaded below.` : 'Text loaded below — click Analyze.');
+  } else {
+    toast('error', 'OCR failed', 'No text could be extracted from any screenshot.');
+  }
+}
+
+/**
+ * Lightweight per-thumb progress update while running —
+ * avoids full renderGallery() on every Tesseract tick.
+ */
+function updateThumbProgress(id, progress) {
+  const pct = Math.round(progress * 100);
+  const thumb = document.getElementById('thumb-' + id);
+  if (!thumb) return;
+  const bar  = thumb.querySelector('.ocr-thumb-progress-bar');
+  const pctEl = thumb.querySelector('.ocr-thumb-pct');
+  if (bar)   bar.style.width   = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+/**
+ * Merge all successfully OCR'd texts in queue order,
+ * separated by a clear visual divider, into the textarea.
+ */
+function mergeOcrTextToTextarea() {
+  const done = ocrQueue.filter(q => q.status === 'done' && q.text);
+  if (!done.length) return;
+
+  const merged = done.map((item, i) => {
+    const label = `--- Screenshot ${i + 1}: ${item.file.name} ---`;
+    return `${label}\n${item.text}`;
+  }).join('\n\n');
+
+  const textarea = document.getElementById('message-input');
+  textarea.value = merged;
+  textarea.dispatchEvent(new Event('input'));
+}
+
+
+// ═══════════════════════════════════════════════════════
+//  DRAG-TO-REORDER thumbnails
+// ═══════════════════════════════════════════════════════
+
+let dragSrcId = null;
+
+function thumbDragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  const thumb = document.getElementById('thumb-' + id);
+  if (thumb) thumb.classList.add('ocr-thumb--dragging');
+}
+
+function thumbDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function thumbDrop(e, targetId) {
+  e.preventDefault();
+  if (!dragSrcId || dragSrcId === targetId) {
+    dragSrcId = null;
+    return;
+  }
+  const srcIdx = ocrQueue.findIndex(q => q.id === dragSrcId);
+  const tgtIdx = ocrQueue.findIndex(q => q.id === targetId);
+  if (srcIdx === -1 || tgtIdx === -1) { dragSrcId = null; return; }
+
+  // Swap in array
+  const [moved] = ocrQueue.splice(srcIdx, 1);
+  ocrQueue.splice(tgtIdx, 0, moved);
+  dragSrcId = null;
+  renderGallery();
+  // If any are done, re-merge text in new order
+  if (ocrQueue.some(q => q.status === 'done')) mergeOcrTextToTextarea();
 }
 
 // ─────────────────────────────────────────
