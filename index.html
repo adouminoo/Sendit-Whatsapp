@@ -11,7 +11,7 @@
   <!-- ═══════════════════════════════════════════
        SIDEBAR OVERLAY (mobile)
   ════════════════════════════════════════════ -->
-  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- ═══════════════════════════════════════════
        SIDEBAR
@@ -60,7 +60,7 @@
 
     <!-- ─── TOPBAR ─────────────────────────────── -->
     <header class="topbar">
-      <button id="hamburger-btn" class="hamburger-btn" aria-label="Open menu">
+      <button id="hamburger-btn" class="hamburger-btn" aria-label="Open menu" onclick="openSidebar()">
         <span></span><span></span><span></span>
       </button>
       <h1 id="topbar-title" class="topbar-title">Extract Orders</h1>
