@@ -4,7 +4,7 @@
 
 const CONFIG = {
   // 🌐 Your Cloudflare Worker URL
-  API_PROXY_URL: "https://sendit-whatsapp.adam-ahmito2.workers.dev",
+  API_PROXY_URL: "https://openai-proxy.adam-ahmito2.workers.dev",
 
   // 📦 Sendit.ma credentials
   SENDIT_BASE_URL: "https://app.sendit.ma/api/v1",
