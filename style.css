@@ -1757,6 +1757,11 @@ input[type="checkbox"] {
   box-shadow: 0 0 0 1px rgba(61,126,255,0.18), var(--shadow-sm);
 }
 
+.ocr-thumb-status--optimizing {
+  border-color: rgba(6,182,212,0.46);
+  box-shadow: 0 0 0 1px rgba(6,182,212,0.14), var(--shadow-sm);
+}
+
 .ocr-thumb-status--done {
   border-color: rgba(34,197,94,0.38);
 }
@@ -1888,6 +1893,12 @@ input[type="checkbox"] {
   color: var(--yellow);
 }
 
+.ocr-thumb-badge--optimizing {
+  border-color: rgba(6,182,212,0.3);
+  background: rgba(6,182,212,0.1);
+  color: var(--cyan);
+}
+
 .ocr-thumb-badge--done {
   border-color: rgba(34,197,94,0.28);
   background: rgba(34,197,94,0.1);
@@ -1923,6 +1934,17 @@ input[type="checkbox"] {
   border-color: rgba(239,68,68,0.25);
   color: var(--red);
   transform: scale(1.06);
+}
+
+.ocr-thumb-meta {
+  padding: 0 9px 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Helpful optional empty state if your HTML includes it */
