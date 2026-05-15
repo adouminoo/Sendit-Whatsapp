@@ -887,6 +887,7 @@ function handleFileList(files) {
 
 let ocrQueue    = [];   // array of queue items (see above)
 let ocrRunning  = false; // guard against double-start
+let ocrCurrentItemRef = null; // points to the item currently being recognized
 const OCR_MAX_WIDTH = 1400;
 const OCR_MAX_PIXELS = 2600000;
 const OCR_IMAGE_QUALITY = 0.75;
@@ -1016,21 +1017,25 @@ async function createOcrWorker() {
     throw new Error('OCR library is not loaded. Refresh the page and try again.');
   }
 
-  async function _init() {
-    // Tesseract.js v5: createWorker takes an options object (no positional lang/OEM args).
-    // Language loading must be done with loadLanguage() + initialize() after creation.
-    const worker = await Tesseract.createWorker({
-      logger: () => {}   // suppress internal logs; per-item logger set at recognize() time
-    });
-    await worker.loadLanguage('ara+fra+eng');
-    await worker.initialize('ara+fra+eng');
-    return worker;
-  }
-
+  // Tesseract.js v5 correct API: createWorker(langs, oem, options)
+  // - loadLanguage() and initialize() are no-ops in v5; language goes here.
+  // - Pinned workerPath + corePath prevent the secondary CDN fetch that causes
+  //   silent hangs on mobile / slow connections ("stuck on Preparing OCR").
+  // - Arabic traineddata (~15 MB) removed — main cause of mobile freeze.
+  //   French + English covers romanised Darija; the AI step handles the rest.
   return withTimeout(
-    _init(),
+    Tesseract.createWorker('fra+eng', 1, {
+      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+      corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.0.0',
+      logger: m => {
+        if (m.status === 'recognizing text' && ocrCurrentItemRef) {
+          ocrCurrentItemRef.progress = Math.max(0.02, m.progress || 0);
+          updateThumbProgress(ocrCurrentItemRef.id, ocrCurrentItemRef.progress);
+        }
+      }
+    }),
     OCR_WORKER_TIMEOUT_MS,
-    'OCR took too long to start. Refresh and try fewer screenshots.'
+    'OCR took too long to start. Check your internet connection and try again.'
   );
 }
 
@@ -1261,19 +1266,17 @@ async function runAllOCR() {
         setOverallProgress(doneCount, pending.length, true, `Running OCR ${doneCount + 1} / ${pending.length}...`);
         renderGallery();
 
-        // Tesseract.js v5: logger goes in createWorker options, not in recognize().
-        // We patch the worker logger per-item for progress tracking.
-        worker.logger = m => {
-          if (m.status === 'recognizing text') {
-            item.progress = Math.max(0.02, m.progress || 0);
-            updateThumbProgress(item.id, item.progress);
-          }
-        };
+        // In Tesseract.js v5 the logger is fixed at createWorker() time.
+        // We use a shared mutable ref so the closure inside createOcrWorker's
+        // logger option can forward to whatever the current item's tracker is.
+        // ocrCurrentItemRef is set just before recognize() and cleared after.
+        ocrCurrentItemRef = item;
         const result = await withTimeout(
           worker.recognize(item.optimizedFile),
           OCR_ITEM_TIMEOUT_MS,
           'OCR timed out on this screenshot. It may be too tall or too blurry.'
         );
+        ocrCurrentItemRef = null;
 
         const text = (result?.data?.text || '').trim();
         item.progress = 1;
