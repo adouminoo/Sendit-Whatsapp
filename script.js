@@ -1,13 +1,13 @@
 /* =====================================================
-   script.js  â€”  Sendit Order Tool
+   script.js  —  Sendit Order Tool
    v3.0: + OCR screenshot upload + Reference toggle
    ===================================================== */
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  CITY MAP  (ID lookup for Sendit API)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 const CITY_MAP = {
-  "ighrem n'ougdal":617,"anzal":616,"timedline":615,"tabounte ouarzazate":614,"tabourahte":613,"agouim":612,"amerzgane":611,"aÃ¯t ben haddou":610,"sidi bouzid ( safi )":609,"aquermoud":608,"bni boufrah":607,"galaz":606,"ahejarr ennehal":604,"melloussa":603,"imi ouaddar":602,"mirleft":601,"ain lahcen":600,"beni hassane":598,"belyounech":597,"azla":596,"bni ahmed cherqia":595,"kaa asrass":594,"el jebeha":593,"stehat":592,"ben karrich":591,"hajria ouled daoud":589,"ourtzagh":588,"fricha":587,"khlalfa":586,"kariat ba mohamed":585,"sebt ben sassi":584,"sidi zouine":583,"chrifia":582,"sidi bou othmane":581,"ben rahmoun":580,"asni":579,"belaaguid":577,"mohammedia - alia":576,"mohammedia - hay wafa":575,"mohammedia - hassania":574,"mohammedia - nassim":573,"mohammedia - al massira":572,"mohammedia - al wahda":571,"mohammedia - kasbah":570,"mohammedia - parc":569,"achakkar":568,"tansifte":567,"tinzouline":566,"taghbalt":565,"tamezmoute":564,"ternata":563,"tazarine":562,"m'hamid el ghizlane":561,"nkoub":560,"fezouata":559,"errouha":558,"ait boudaoud":557,"tagounite":556,"bleida":554,"beni zoli":553,"tamegroute":552,"birkouate":551,"had draa":550,"tafetachte":549,"meskala":548,"tleta-el henchane":547,"douar laarab":546,"ait daoud":545,"tamanar":544,"smimou":543,"tidzi":542,"sidi kaouki":541,"sidi taibi":540,"ouahat sidi brahim":539,"bouskoura-ouled saleh":538,"bouskoura-ville verte":537,"lalla mimouna":536,"dlalha":535,"sebt jahjouhe":534,"bouderbala":533,"timahdite":532,"zouada":531,"khemis du sahel":530,"afsou":529,"oulad amrane rÃ©gion el jadida":528,"el haouzia":527,"messawerr rasso":526,"sidi smaÃ¯l":525,"oulad frej":524,"bir jdid":523,"bab marzouka":522,"marnissa":521,"tiddas":520,"guisser":519,"el borouj rÃ©gion de settat":518,"oulad abbou":517,"oulad said rÃ©gion de settat":516,"sidi el ayedi":515,"ras el ain rÃ©gion de settat":514,"ain mediouna":513,"bouhouda":512,"bani walid":511,"ain aicha":510,"tissa":509,"azrou rÃ©gion d'agadir":508,"outat el haj":507,"el kebab":506,"sidi allal tazi":505,"ain leuh":504,"timezgadiouine":503,"bni bouayach":502,"issaguen":501,"targuist":500,"bni hadifa":499,"ait-kamara":498,"boukidaren":497,"ajdir":496,"bassatine el menzeh":495,"jaadar":494,"afra":493,"bouarg":492,"mariouari":491,"beni sidal jbel":490,"kariat arekmane":489,"ouled settout":488,"tafersit":487,"kassita":486,"telat azlaf":485,"tamsamane":484,"boudinar":483,"dar-el kebdani":482,"aÃ¯n erreggada":481,"boughriba":480,"madagh":479,"beni drar":478,"tendrara":477,"bouÃ¢rfa":476,"figuig":475,"el-afak":474,"casablanca - abdelmoumen":473,"ras el ma - cap de l'eau":472,"oulad azzouz dar 16":471,"casablanca - jawhara":470,"casablanca - nassim ii":463,"casablanca - al mostakbal":464,"casablanca - sid al khadir":465,"casablanca - el hana":466,"casablanca - tantonville":469,"casablanca - france ville ii":467,"casablanca - lamkansa":468,"taghazout":462,"loulad":461,"ouled dahhou":459,"tamraght":458,"ouled moumna":457,"agouidir":456,"bouaboud":455,"ighoud":454,"sidi chiker":453,"ait hadi":452,"mejjat - rÃ©gion de marrakech":451,"mzoudia":450,"sidi bou zid chichaoua":449,"sid l'mokhtar":448,"imintanout":447,"beni chiker":446,"tiztoutine":445,"ben taieb":444,"midar":443,"driouch":442,"farkhana":441,"touima":440,"assahrij":439,"laayayta":418,"foum oudi":417,"had boumoussa":416,"bradia":415,"aÃ¯t ishaq":414,"tighassaline":413,"aguelmous":412,"ouaouizeght":411,"beni ayat":410,"timoulilt":409,"afourar":408,"oulad m'barek":407,"sidi aÃ¯ssa":406,"oulad ayad":405,"dar ould zidouh":404,"souk sebt":403,"sidi jaber":402,"oulad zmam":401,"oulad ali":400,"oulad youssef":398,"tagzirt":397,"ighrem laÃ¢lam":396,"oulad yaich":395,"taliouine":394,"oulad berhil":393,"massa":392,"lagfifat":391,"rencon":390,"cabo negro":389,"laaouamera":388,"khandagour":387,"jebila":386,"mnar":385,"sidi hssain":384,"gueznaia":383,"ghafsai":382,"ghazoua":381,"ait aiaaza":380,"aoulouz":379,"dcheira el jihadia":378,"leqliaa":377,"tarast":376,"loudaya":375,"aourir rÃ©gion agadir":374,"rommani":373,"oulmÃ¨s":372,"el aarjate":371,"moulay bousselham":368,"mehdia":367,"harhoura":366,"mers el kheir":365,"tahanaout":364,"assa":363,"bab taza":362,"tahla":358,"imzouren":357,"ourika":356,"ait ourir":355,"boulman":354,"oued laou":353,"el mansouria":352,"tizi ouasli":351,"boured":350,"aknoul":349,"oued amlil":347,"el ksiba":344,"khenichet":343,"jorf el melha":341,"aÃ¯n-bÃ©ni-mathar":340,"el aÃ¯oun charqiya":339,"aklim":338,"zaio":337,"ayt ihya":336,"msemrir":335,"ait sedrate sahl gharbia":334,"alnif":333,"aÃ¯t tarzout":332,"ait aissa ou brahim":331,"aoufous":330,"missour":329,"boumia":328,"zaida":327,"tamaris":326,"jerada":325,"boumalen dades":324,"ouazzane":323,"tata":322,"agourai":320,"tinejdad":319,"el gara":318,"mechra bel ksiri":317,"saiss":316,"moulay yÃ¢coub":315,"ain-cheggag":314,"sakia el hamra":313,"tlat bouguedra":311,"souira guedima":310,"ounagha":309,"talmest":308,"oualidia":307,"zeghanghane":304,"essemara":303,"chtouka - rÃ©gion agadir":297,"ait amira":296,"temsia":295,"tikiwin":294,"agdz (zagoura)":293,"taznakht":292,"skoura":291,"echemmaia":290,"skhour rehamna":289,"tamellalt":288,"douar lahna":287,"sidi abdellah ghiyat":286,"lahbichat":285,"sidi moussa rÃ©gion de marrakech":284,"ouled hassoune":283,"souihla":282,"alouidane":281,"chwiter":280,"tameslouht":279,"tssoultante":278,"harbile":277,"dar essalam":276,"ben ahmed":275,"sidi hajjaj rÃ©gion de settat":274,"bni yakhlef":273,"hettan":272,"bounoir":271,"sidi yahya el gharb":270,"zaer":269,"ain chkaf":268,"m'haya":267,"ouislane":266,"mejat rÃ©gion de fÃ¨s-meknÃ¨s":265,"skhinate":264,"oulad tayeb":263,"sidi hrazem":262,"deroua":261,"ksar sghir":260,"casablanca - palmier":258,"casablanca - anassi":359,"casablanca - azhar":360,"casablanca - salmia":361,"casablanca - lahraouine":369,"casablanca - ghandi":420,"casablanca - el hank":421,"casablanca - hay tissir":422,"casablanca - hay el farah":423,"casablanca - habous":424,"casablanca - bachkou":425,"casablanca - derb milan":426,"casablanca - derb alkabir":427,"casablanca - val fleurie":428,"casablanca - riveira":429,"casablanca - bournazel":430,"casablanca - floride":431,"casablanca - mandarona":432,"casablanca - polo":433,"casablanca - hay assalama":434,"casablanca - attacharok":435,"casablanca - derb sultan":436,"casablanca - hay al inara":437,"el hajeb":257,"goulmima":255,"boufakrane":253,"sidi bouknadel":233,"zaouiat cheikh":232,"zagoura":229,"youssoufia":228,"tiznit":226,"tit melil":225,"tinghir":224,"tiflet":223,"tetouan":222,"temara":220,"taroudant":218,"taourirt":216,"taounate":215,"tan-tan":214,"tamesna":212,"tamansourt":211,"souk el arbaa du gharb":209,"skhirat":208,"sidi slimane":206,"sidi kacem":205,"sidi ifni":204,"sidi bouzid ( el jadida )":203,"sidi bibi":202,"sidi bennour":201,"sidi allal el bahraoui":200,"sidi addi":198,"sefrou":196,"sebt oulad nemma":195,"sebt gzoula":193,"sebt el guerdane":192,"sala el jadida":191,"sale":190,"saidia":189,"safi":188,"rissani":186,"oulad teima":181,"oued zem":180,"ouarzazate":177,"mrirt":175,"moulay idriss zerhouni":174,"moulay abdellah":172,"midelt":170,"merzouga":168,"meknes":167,"mdiq":165,"laarache":164,"laÃ¢youne":162,"laattaouia":161,"ksar el kebir":159,"khouribga":158,"khenifra":157,"khemis des zemamra":156,"kenitra":155,"kelaat m'gouna":154,"kasba tadla":153,"jamaat shaim":149,"inzegane":148,"imouzzer du kandar":147,"ifran":145,"guercif":143,"guelmim":142,"fquih ben salah":141,"fes":139,"essaouira":137,"errachidia":136,"er-rich":135,"el kelaa des sraghna":133,"haj kaddour":132,"drarga":130,"demnate":126,"dakhla":124,"chichaoua":123,"chefchaouen":122,"boujniba":119,"boujdour":118,"beni mellal":115,"benguerir":113,"belfaa":111,"bejaad":110,"bab berred":108,"azrou rÃ©gion de fÃ¨s-meknÃ¨s":107,"azilal":106,"azemmour":105,"assilah":104,"arfoud":102,"anza":100,"aÃ¯t melloul":96,"ain taoujdate":94,"ain attig":87,"ain el aouda":86,"taza":81,"selouane":76,"oujda":73,"nador":72,"martil":71,"khemisset":70,"fnideq":69,"chellalat mohammedia":68,"biougra":66,"berkane":65,"benslimane":64,"beni ensar":63,"al hoceima":61,"al aaroui":60,"ain harrouda":58,"ahfir":57,"marrakech":56,"el jadida":55,"agadir":54,"rabat":53,"tanger":52,"sidi rahal":51,"bouznika":49,"casablanca - 2 mars":48,"had soualem":47,"casablanca - autres quartiers":46,"nouacer":45,"mediouna":44,"settat":43,"berrechid":42,"dar bouaza":40,"errahma":39,"bouskoura-centre":38,"mohammedia":41,"casablanca - sidi othmane":37,"casablanca - sidi moumen":36,"casablanca - derb omar":35,"casablanca - ancienne medina":34,"casablanca - sidi belyout":33,"casablanca - gauthier":32,"casablanca - centre ville":31,"casablanca - sbata":30,"casablanca - ain borja":29,"casablanca - belvÃ©dÃ¨re":28,"casablanca - roches noires":27,"casablanca - hay moulay rachid":26,"casablanca - garage allal":25,"casablanca - la gironde":24,"casablanca - mers sultan":23,"casablanca - les hÃ´pitaux":22,"casablanca - derb ghalef":21,"casablanca - maarif":20,"casablanca - hay mohammedi":19,"casablanca - oulfa":18,"casablanca - lissassfa":17,"casablanca - cil":16,"casablanca - beausÃ©jour":15,"casablanca - hay hassani":14,"casablanca - bernoussi":13,"casablanca - ben msik":12,"casablanca - ain sebaa":11,"casablanca - oasis":10,"casablanca - hay moulay abdellah":9,"casablanca - californie":8,"casablanca - ain chok":7,"casablanca - racine":6,"casablanca - bourgogne":5,"casablanca - anfa":4,"casablanca - ain diab":3,"casablanca - sidi maÃ¢rouf":2,"casablanca - al fida":1
+  "ighrem n'ougdal":617,"anzal":616,"timedline":615,"tabounte ouarzazate":614,"tabourahte":613,"agouim":612,"amerzgane":611,"aït ben haddou":610,"sidi bouzid ( safi )":609,"aquermoud":608,"bni boufrah":607,"galaz":606,"ahejarr ennehal":604,"melloussa":603,"imi ouaddar":602,"mirleft":601,"ain lahcen":600,"beni hassane":598,"belyounech":597,"azla":596,"bni ahmed cherqia":595,"kaa asrass":594,"el jebeha":593,"stehat":592,"ben karrich":591,"hajria ouled daoud":589,"ourtzagh":588,"fricha":587,"khlalfa":586,"kariat ba mohamed":585,"sebt ben sassi":584,"sidi zouine":583,"chrifia":582,"sidi bou othmane":581,"ben rahmoun":580,"asni":579,"belaaguid":577,"mohammedia - alia":576,"mohammedia - hay wafa":575,"mohammedia - hassania":574,"mohammedia - nassim":573,"mohammedia - al massira":572,"mohammedia - al wahda":571,"mohammedia - kasbah":570,"mohammedia - parc":569,"achakkar":568,"tansifte":567,"tinzouline":566,"taghbalt":565,"tamezmoute":564,"ternata":563,"tazarine":562,"m'hamid el ghizlane":561,"nkoub":560,"fezouata":559,"errouha":558,"ait boudaoud":557,"tagounite":556,"bleida":554,"beni zoli":553,"tamegroute":552,"birkouate":551,"had draa":550,"tafetachte":549,"meskala":548,"tleta-el henchane":547,"douar laarab":546,"ait daoud":545,"tamanar":544,"smimou":543,"tidzi":542,"sidi kaouki":541,"sidi taibi":540,"ouahat sidi brahim":539,"bouskoura-ouled saleh":538,"bouskoura-ville verte":537,"lalla mimouna":536,"dlalha":535,"sebt jahjouhe":534,"bouderbala":533,"timahdite":532,"zouada":531,"khemis du sahel":530,"afsou":529,"oulad amrane région el jadida":528,"el haouzia":527,"messawerr rasso":526,"sidi smaïl":525,"oulad frej":524,"bir jdid":523,"bab marzouka":522,"marnissa":521,"tiddas":520,"guisser":519,"el borouj région de settat":518,"oulad abbou":517,"oulad said région de settat":516,"sidi el ayedi":515,"ras el ain région de settat":514,"ain mediouna":513,"bouhouda":512,"bani walid":511,"ain aicha":510,"tissa":509,"azrou région d'agadir":508,"outat el haj":507,"el kebab":506,"sidi allal tazi":505,"ain leuh":504,"timezgadiouine":503,"bni bouayach":502,"issaguen":501,"targuist":500,"bni hadifa":499,"ait-kamara":498,"boukidaren":497,"ajdir":496,"bassatine el menzeh":495,"jaadar":494,"afra":493,"bouarg":492,"mariouari":491,"beni sidal jbel":490,"kariat arekmane":489,"ouled settout":488,"tafersit":487,"kassita":486,"telat azlaf":485,"tamsamane":484,"boudinar":483,"dar-el kebdani":482,"aïn erreggada":481,"boughriba":480,"madagh":479,"beni drar":478,"tendrara":477,"bouârfa":476,"figuig":475,"el-afak":474,"casablanca - abdelmoumen":473,"ras el ma - cap de l'eau":472,"oulad azzouz dar 16":471,"casablanca - jawhara":470,"casablanca - nassim ii":463,"casablanca - al mostakbal":464,"casablanca - sid al khadir":465,"casablanca - el hana":466,"casablanca - tantonville":469,"casablanca - france ville ii":467,"casablanca - lamkansa":468,"taghazout":462,"loulad":461,"ouled dahhou":459,"tamraght":458,"ouled moumna":457,"agouidir":456,"bouaboud":455,"ighoud":454,"sidi chiker":453,"ait hadi":452,"mejjat - région de marrakech":451,"mzoudia":450,"sidi bou zid chichaoua":449,"sid l'mokhtar":448,"imintanout":447,"beni chiker":446,"tiztoutine":445,"ben taieb":444,"midar":443,"driouch":442,"farkhana":441,"touima":440,"assahrij":439,"laayayta":418,"foum oudi":417,"had boumoussa":416,"bradia":415,"aït ishaq":414,"tighassaline":413,"aguelmous":412,"ouaouizeght":411,"beni ayat":410,"timoulilt":409,"afourar":408,"oulad m'barek":407,"sidi aïssa":406,"oulad ayad":405,"dar ould zidouh":404,"souk sebt":403,"sidi jaber":402,"oulad zmam":401,"oulad ali":400,"oulad youssef":398,"tagzirt":397,"ighrem laâlam":396,"oulad yaich":395,"taliouine":394,"oulad berhil":393,"massa":392,"lagfifat":391,"rencon":390,"cabo negro":389,"laaouamera":388,"khandagour":387,"jebila":386,"mnar":385,"sidi hssain":384,"gueznaia":383,"ghafsai":382,"ghazoua":381,"ait aiaaza":380,"aoulouz":379,"dcheira el jihadia":378,"leqliaa":377,"tarast":376,"loudaya":375,"aourir région agadir":374,"rommani":373,"oulmès":372,"el aarjate":371,"moulay bousselham":368,"mehdia":367,"harhoura":366,"mers el kheir":365,"tahanaout":364,"assa":363,"bab taza":362,"tahla":358,"imzouren":357,"ourika":356,"ait ourir":355,"boulman":354,"oued laou":353,"el mansouria":352,"tizi ouasli":351,"boured":350,"aknoul":349,"oued amlil":347,"el ksiba":344,"khenichet":343,"jorf el melha":341,"aïn-béni-mathar":340,"el aïoun charqiya":339,"aklim":338,"zaio":337,"ayt ihya":336,"msemrir":335,"ait sedrate sahl gharbia":334,"alnif":333,"aït tarzout":332,"ait aissa ou brahim":331,"aoufous":330,"missour":329,"boumia":328,"zaida":327,"tamaris":326,"jerada":325,"boumalen dades":324,"ouazzane":323,"tata":322,"agourai":320,"tinejdad":319,"el gara":318,"mechra bel ksiri":317,"saiss":316,"moulay yâcoub":315,"ain-cheggag":314,"sakia el hamra":313,"tlat bouguedra":311,"souira guedima":310,"ounagha":309,"talmest":308,"oualidia":307,"zeghanghane":304,"essemara":303,"chtouka - région agadir":297,"ait amira":296,"temsia":295,"tikiwin":294,"agdz (zagoura)":293,"taznakht":292,"skoura":291,"echemmaia":290,"skhour rehamna":289,"tamellalt":288,"douar lahna":287,"sidi abdellah ghiyat":286,"lahbichat":285,"sidi moussa région de marrakech":284,"ouled hassoune":283,"souihla":282,"alouidane":281,"chwiter":280,"tameslouht":279,"tssoultante":278,"harbile":277,"dar essalam":276,"ben ahmed":275,"sidi hajjaj région de settat":274,"bni yakhlef":273,"hettan":272,"bounoir":271,"sidi yahya el gharb":270,"zaer":269,"ain chkaf":268,"m'haya":267,"ouislane":266,"mejat région de fès-meknès":265,"skhinate":264,"oulad tayeb":263,"sidi hrazem":262,"deroua":261,"ksar sghir":260,"casablanca - palmier":258,"casablanca - anassi":359,"casablanca - azhar":360,"casablanca - salmia":361,"casablanca - lahraouine":369,"casablanca - ghandi":420,"casablanca - el hank":421,"casablanca - hay tissir":422,"casablanca - hay el farah":423,"casablanca - habous":424,"casablanca - bachkou":425,"casablanca - derb milan":426,"casablanca - derb alkabir":427,"casablanca - val fleurie":428,"casablanca - riveira":429,"casablanca - bournazel":430,"casablanca - floride":431,"casablanca - mandarona":432,"casablanca - polo":433,"casablanca - hay assalama":434,"casablanca - attacharok":435,"casablanca - derb sultan":436,"casablanca - hay al inara":437,"el hajeb":257,"goulmima":255,"boufakrane":253,"sidi bouknadel":233,"zaouiat cheikh":232,"zagoura":229,"youssoufia":228,"tiznit":226,"tit melil":225,"tinghir":224,"tiflet":223,"tetouan":222,"temara":220,"taroudant":218,"taourirt":216,"taounate":215,"tan-tan":214,"tamesna":212,"tamansourt":211,"souk el arbaa du gharb":209,"skhirat":208,"sidi slimane":206,"sidi kacem":205,"sidi ifni":204,"sidi bouzid ( el jadida )":203,"sidi bibi":202,"sidi bennour":201,"sidi allal el bahraoui":200,"sidi addi":198,"sefrou":196,"sebt oulad nemma":195,"sebt gzoula":193,"sebt el guerdane":192,"sala el jadida":191,"sale":190,"saidia":189,"safi":188,"rissani":186,"oulad teima":181,"oued zem":180,"ouarzazate":177,"mrirt":175,"moulay idriss zerhouni":174,"moulay abdellah":172,"midelt":170,"merzouga":168,"meknes":167,"mdiq":165,"laarache":164,"laâyoune":162,"laattaouia":161,"ksar el kebir":159,"khouribga":158,"khenifra":157,"khemis des zemamra":156,"kenitra":155,"kelaat m'gouna":154,"kasba tadla":153,"jamaat shaim":149,"inzegane":148,"imouzzer du kandar":147,"ifran":145,"guercif":143,"guelmim":142,"fquih ben salah":141,"fes":139,"essaouira":137,"errachidia":136,"er-rich":135,"el kelaa des sraghna":133,"haj kaddour":132,"drarga":130,"demnate":126,"dakhla":124,"chichaoua":123,"chefchaouen":122,"boujniba":119,"boujdour":118,"beni mellal":115,"benguerir":113,"belfaa":111,"bejaad":110,"bab berred":108,"azrou région de fès-meknès":107,"azilal":106,"azemmour":105,"assilah":104,"arfoud":102,"anza":100,"aït melloul":96,"ain taoujdate":94,"ain attig":87,"ain el aouda":86,"taza":81,"selouane":76,"oujda":73,"nador":72,"martil":71,"khemisset":70,"fnideq":69,"chellalat mohammedia":68,"biougra":66,"berkane":65,"benslimane":64,"beni ensar":63,"al hoceima":61,"al aaroui":60,"ain harrouda":58,"ahfir":57,"marrakech":56,"el jadida":55,"agadir":54,"rabat":53,"tanger":52,"sidi rahal":51,"bouznika":49,"casablanca - 2 mars":48,"had soualem":47,"casablanca - autres quartiers":46,"nouacer":45,"mediouna":44,"settat":43,"berrechid":42,"dar bouaza":40,"errahma":39,"bouskoura-centre":38,"mohammedia":41,"casablanca - sidi othmane":37,"casablanca - sidi moumen":36,"casablanca - derb omar":35,"casablanca - ancienne medina":34,"casablanca - sidi belyout":33,"casablanca - gauthier":32,"casablanca - centre ville":31,"casablanca - sbata":30,"casablanca - ain borja":29,"casablanca - belvédère":28,"casablanca - roches noires":27,"casablanca - hay moulay rachid":26,"casablanca - garage allal":25,"casablanca - la gironde":24,"casablanca - mers sultan":23,"casablanca - les hôpitaux":22,"casablanca - derb ghalef":21,"casablanca - maarif":20,"casablanca - hay mohammedi":19,"casablanca - oulfa":18,"casablanca - lissassfa":17,"casablanca - cil":16,"casablanca - beauséjour":15,"casablanca - hay hassani":14,"casablanca - bernoussi":13,"casablanca - ben msik":12,"casablanca - ain sebaa":11,"casablanca - oasis":10,"casablanca - hay moulay abdellah":9,"casablanca - californie":8,"casablanca - ain chok":7,"casablanca - racine":6,"casablanca - bourgogne":5,"casablanca - anfa":4,"casablanca - ain diab":3,"casablanca - sidi maârouf":2,"casablanca - al fida":1
 };
 
 // City aliases/shortcuts
@@ -16,20 +16,20 @@ const CITY_ALIASES = {
   "casablanca": "casablanca",
   "csa": "casablanca",
   "rabat": "rabat",
-  "fes": "fes", "fÃ¨s": "fes",
-  "meknes": "meknes", "meknÃ¨s": "meknes",
+  "fes": "fes", "fès": "fes",
+  "meknes": "meknes", "meknès": "meknes",
   "tanger": "tanger", "tangier": "tanger",
   "agadir": "agadir",
   "marrakech": "marrakech", "marrakesh": "marrakech",
   "oujda": "oujda",
-  "tetouan": "tetouan", "tÃ©touan": "tetouan",
+  "tetouan": "tetouan", "tétouan": "tetouan",
   "nador": "nador",
-  "kenitra": "kenitra", "kÃ©nitra": "kenitra",
-  "sale": "sale", "salÃ©": "sale",
-  "temara": "temara", "tÃ©mara": "temara",
+  "kenitra": "kenitra", "kénitra": "kenitra",
+  "sale": "sale", "salé": "sale",
+  "temara": "temara", "témara": "temara",
   "settat": "settat",
   "berrechid": "berrechid",
-  "beni mellal": "beni mellal", "bÃ©ni mellal": "beni mellal",
+  "beni mellal": "beni mellal", "béni mellal": "beni mellal",
   "khouribga": "khouribga",
   "mohammedia": "mohammedia",
   "el jadida": "el jadida",
@@ -40,9 +40,9 @@ const CITY_ALIASES = {
   "inzgane": "inzegane",
 };
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  STATE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 let pendingOrders = [];
 let sentOrders    = [];
 let customers     = {};
@@ -55,9 +55,9 @@ let filterCity    = '';
 let filterProduct = '';
 let searchQuery   = '';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  REFERENCE TOGGLE STATE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 let activeReference = null; // null = none selected
 
 /** Load persisted reference from localStorage */
@@ -116,9 +116,9 @@ function getActiveReferenceValue() {
   return btn ? btn.dataset.value : null;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  PERSISTENCE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function saveData() {
   try {
     localStorage.setItem('sendit_orders',    JSON.stringify(sentOrders));
@@ -135,9 +135,9 @@ function loadData() {
   } catch(e) { console.warn('localStorage read failed', e); }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  HELPERS
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function cleanPhone(phone) {
   phone = String(phone).replace(/\D/g, '');
   if (phone.startsWith('212')) phone = '0' + phone.slice(3);
@@ -185,11 +185,11 @@ function uid() {
 
 function fmtPrice(p) {
   const n = cleanPrice(p);
-  return n ? n.toLocaleString('fr-MA') + ' DH' : 'â€”';
+  return n ? n.toLocaleString('fr-MA') + ' DH' : '—';
 }
 
 function fmtDate(ts) {
-  if (!ts) return 'â€”';
+  if (!ts) return '—';
   return new Date(ts).toLocaleString('fr-MA', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
 }
 
@@ -197,15 +197,15 @@ function avatarLetter(name) {
   return (name || 'C').trim().charAt(0).toUpperCase();
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  TOAST
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function toast(type, title, msg = '') {
-  const icons = { success: 'âœ…', error: 'âŒ', info: 'â„¹ï¸' };
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
   const container = document.getElementById('toast-container');
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
-  el.innerHTML = `<div class="toast-icon">${icons[type] || 'â„¹ï¸'}</div>
+  el.innerHTML = `<div class="toast-icon">${icons[type] || 'ℹ️'}</div>
     <div class="toast-body"><div class="toast-title">${title}</div>${msg ? `<div class="toast-msg">${msg}</div>` : ''}</div>`;
   container.appendChild(el);
   el.addEventListener('click', () => removeToast(el));
@@ -217,9 +217,9 @@ function removeToast(el) {
   setTimeout(() => el.remove(), 300);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  MODAL
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function openModal(id) {
   document.getElementById(id).classList.add('open');
 }
@@ -227,9 +227,9 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('open');
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  NAV
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function navigate(view) {
   currentView = view;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -255,9 +255,9 @@ function closeSidebar() {
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  STATS
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function updateStats() {
   const total = sentOrders.length;
   const delivered = sentOrders.filter(o => o.status === 'delivered').length;
@@ -278,15 +278,15 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  AI EXTRACTION  (OpenAI)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 async function extractOrders(text) {
   const prompt = `Extract order information from this Moroccan WhatsApp message.
 The message may be in Darija, French, Arabic, or mixed.
 
 STRICT RULES:
-- name: customer name (if missing â†’ "Client")
+- name: customer name (if missing → "Client")
 - phone: Moroccan phone as string, e.g. "0612345678" (strip +212, keep 10 digits starting with 0)
 - city: detect the MOST SPECIFIC Moroccan delivery area possible
 
@@ -302,10 +302,10 @@ return them in this EXACT format:
 DO NOT return only "casablanca" or "casa" if a neighborhood exists.
 
 Examples:
-"casa maarif" â†’ "casablanca - maarif"
-"maarif" â†’ "casablanca - maarif"
-"casa bourgogne" â†’ "casablanca - bourgogne"
-"anfa" â†’ "casablanca - anfa"
+"casa maarif" → "casablanca - maarif"
+"maarif" → "casablanca - maarif"
+"casa bourgogne" → "casablanca - bourgogne"
+"anfa" → "casablanca - anfa"
 
 For other cities, return the most specific known area possible.- product: what the customer wants to buy
 - price: NUMBER ONLY (e.g. 250, not "250 dh")
@@ -341,16 +341,16 @@ ${text}`;
   return Array.isArray(parsed) ? parsed : [parsed];
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  EXTRACT VIEW
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 async function handleAnalyze() {
   const text = document.getElementById('message-input').value.trim();
   if (!text) { toast('error', 'Empty input', 'Paste a WhatsApp message first.'); return; }
 
   const btn = document.getElementById('btn-analyze');
   btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span> Analyzingâ€¦`;
+  btn.innerHTML = `<span class="spinner"></span> Analyzing…`;
 
   try {
     const orders = await extractOrders(text);
@@ -371,7 +371,7 @@ async function handleAnalyze() {
     toast('error', 'AI Error', e.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `ðŸ” Analyze`;
+    btn.innerHTML = `🔍 Analyze`;
   }
 }
 
@@ -401,8 +401,8 @@ function renderPendingTable() {
       <td class="editable" onclick="editPending(${i},'price')" data-field="price">${fmtPrice(o.price)}</td>
       <td><span class="${isValid ? 'status-badge status-confirmed' : 'status-badge status-cancelled'}">${isValid ? 'Ready' : 'Invalid'}</span></td>
       <td>
-        <button class="btn btn-success btn-sm" onclick="sendSinglePending(${i})" ${isValid ? '' : 'disabled'}>ðŸ“¦ Send</button>
-        <button class="btn btn-danger btn-sm" onclick="removePending(${i})" style="margin-left:4px">ðŸ—‘</button>
+        <button class="btn btn-success btn-sm" onclick="sendSinglePending(${i})" ${isValid ? '' : 'disabled'}>📦 Send</button>
+        <button class="btn btn-danger btn-sm" onclick="removePending(${i})" style="margin-left:4px">🗑</button>
       </td>
     </tr>`;
   }).join('');
@@ -458,9 +458,9 @@ async function sendSelectedPending() {
   }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  SENDIT API
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 async function getSenditToken() {
   const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/login`, {
     method: 'POST',
@@ -489,12 +489,12 @@ async function sendToSendit(order) {
     packaging_id: 1
   };
 
-  // â”€â”€ Inject reference if one is active â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Inject reference if one is active ──────────────────────
   const refValue = getActiveReferenceValue();
   if (refValue) {
     payload.reference = refValue;
   }
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ───────────────────────────────────────────────────────────
 
   const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries`, {
     method: 'POST',
@@ -525,20 +525,20 @@ async function sendSinglePending(idx) {
       updateStats();
       pendingOrders.splice(idx, 1);
       renderPendingTable();
-      toast('success', 'Order Sent! ðŸŽ‰', `${order.name} â€” ${order.product}`);
+      toast('success', 'Order Sent! 🎉', `${order.name} — ${order.product}`);
       showConfirmMessage(saved, labelUrl);
     } else {
       throw new Error(data.message || JSON.stringify(data));
     }
   } catch(e) {
     toast('error', 'Send Failed', e.message);
-    if (btn) { btn.disabled = false; btn.innerHTML = 'ðŸ“¦ Send'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '📦 Send'; }
   }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  CUSTOMER PROFILES
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function addCustomerRecord(order) {
   const phone = cleanPhone(order.phone);
   if (!customers[phone]) {
@@ -553,9 +553,9 @@ function addCustomerRecord(order) {
   if (order.notes) customers[phone].notes = order.notes;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  CONFIRMATION MESSAGE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function showConfirmMessage(order, labelUrl) {
   const msg = generateConfirmMsg(order);
   document.getElementById('confirm-msg-body').textContent = msg;
@@ -566,20 +566,20 @@ function showConfirmMessage(order, labelUrl) {
 
 function generateConfirmMsg(order) {
   const price = fmtPrice(order.price);
-  return `âœ… Commande confirmÃ©e !
+  return `✅ Commande confirmée !
 
 Bonjour ${order.name},
 
-Votre commande a bien Ã©tÃ© enregistrÃ©e :
-ðŸ“¦ Produit : ${order.product}
-ðŸ’° Prix : ${price}
-ðŸ“ Ville : ${order.city}
-ðŸ“ž TÃ©lÃ©phone : ${order.phone}
+Votre commande a bien été enregistrée :
+📦 Produit : ${order.product}
+💰 Prix : ${price}
+📍 Ville : ${order.city}
+📞 Téléphone : ${order.phone}
 
 Notre livreur vous contactera prochainement.
-Merci pour votre confiance ! ðŸ™
+Merci pour votre confiance ! 🙏
 
-â€” Sendit Order Tool`;
+— Sendit Order Tool`;
 }
 
 function copyConfirmMsg() {
@@ -587,9 +587,9 @@ function copyConfirmMsg() {
   navigator.clipboard.writeText(text).then(() => toast('success', 'Copied!', 'Message copied to clipboard.'));
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  ORDERS TABLE (sent orders)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function renderOrdersTable() {
   selectedRows.clear();
   updateBulkBar();
@@ -642,8 +642,8 @@ function renderOrdersTable() {
         <select class="filter-select" style="width:120px;height:32px;font-size:0.78rem" onchange="updateOrderStatus('${o.id}',this.value)">
           ${['pending','confirmed','sent','delivered','cancelled'].map(s => `<option value="${s}" ${o.status===s?'selected':''}>${capitalize(s)}</option>`).join('')}
         </select>
-        ${o.labelUrl ? `<a href="${o.labelUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:4px">ðŸ·ï¸</a>` : ''}
-        <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteOrder('${o.id}')">ðŸ—‘</button>
+        ${o.labelUrl ? `<a href="${o.labelUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:4px">🏷️</a>` : ''}
+        <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteOrder('${o.id}')">🗑</button>
       </td>
     </tr>`).join('');
 }
@@ -690,7 +690,7 @@ function bulkUpdateStatus(status) {
   });
   selectedRows.clear();
   saveData(); updateStats(); renderOrdersTable();
-  toast('success', 'Status Updated', `Selected orders â†’ ${status}`);
+  toast('success', 'Status Updated', `Selected orders → ${status}`);
 }
 
 function bulkDelete() {
@@ -714,13 +714,13 @@ function handleSortClick(field) {
   else { sortField = field; sortAsc = false; }
   document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
   const th = document.getElementById('th-' + field);
-  if (th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortAsc ? 'â–²' : 'â–¼'; }
+  if (th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortAsc ? '▲' : '▼'; }
   renderOrdersTable();
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  EXPORT CSV / JSON
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function exportCSV() {
   const cols = ['name','phone','city','product','price','status','sentAt'];
   const rows = [cols.join(',')];
@@ -747,15 +747,15 @@ function exportJSON() {
   toast('success', 'JSON Exported');
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  CUSTOMERS VIEW
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function renderCustomers() {
   const container = document.getElementById('customers-container');
   const entries = Object.values(customers);
 
   if (!entries.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">ðŸ‘¤</div><p>No customers yet. Send orders to build customer profiles.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">👤</div><p>No customers yet. Send orders to build customer profiles.</p></div>`;
     return;
   }
 
@@ -774,7 +774,7 @@ function renderCustomers() {
           <div style="font-size:0.72rem;color:var(--text-muted)">${c.orders.length} order(s)</div>
         </div>
       </div>
-      ${c.notes ? `<div class="customer-notes">ðŸ¤– ${c.notes}</div>` : ''}
+      ${c.notes ? `<div class="customer-notes">🤖 ${c.notes}</div>` : ''}
       <div class="customer-tags" style="margin-top:10px">
         ${c.orders.map(o => `<span class="tag">${o.product}</span>`).join('')}
         ${lastOrder ? `<span class="tag" style="color:var(--text-muted)">${fmtDate(lastOrder.sentAt)}</span>` : ''}
@@ -783,9 +783,9 @@ function renderCustomers() {
   }).join('');
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  SETTINGS VIEW
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function loadSettings() {
   if (typeof CONFIG === 'undefined') return;
   setVal('setting-sendit-public', CONFIG.SENDIT_PUBLIC_KEY || '');
@@ -814,10 +814,10 @@ function clearAllData() {
   toast('info', 'Data Cleared');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
 //  DRAG & DROP + FILE UPLOAD
-//  Routes .txt â†’ text reader, images â†’ multi-OCR queue
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  Routes .txt → text reader, images → multi-OCR queue
+// ═══════════════════════════════════════════════════════
 
 function initDropZone() {
   const zone  = document.getElementById('drop-zone');
@@ -863,14 +863,14 @@ function handleFileList(files) {
       };
       reader.readAsText(file);
     } else {
-      toast('error', 'Unsupported file', `${file.name} â€” use .txt, .png, .jpg, .jpeg, or .webp`);
+      toast('error', 'Unsupported file', `${file.name} — use .txt, .png, .jpg, .jpeg, or .webp`);
     }
   }
   if (images.length) addImagesToGallery(images);
 }
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
 //  MULTI-SCREENSHOT OCR GALLERY
 //
 //  Each item in ocrQueue:
@@ -879,11 +879,11 @@ function handleFileList(files) {
 //    file:       File object,
 //    objectUrl:  blob URL for preview (revoked after OCR),
 //    status:     'pending' | 'running' | 'done' | 'error',
-//    progress:   0â€“1 (recognizing text phase),
+//    progress:   0–1 (recognizing text phase),
 //    text:       extracted string (after done),
 //    error:      error message (after error)
 //  }
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
 
 let ocrQueue    = [];   // array of queue items (see above)
 let ocrRunning  = false; // guard against double-start
@@ -1039,7 +1039,7 @@ async function createOcrWorker() {
   );
 }
 
-// â”€â”€ ADD images to the gallery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ADD images to the gallery ────────────────────────
 function addImagesToGallery(files) {
   for (const file of files) {
     // Deduplicate by name+size (simple heuristic)
@@ -1066,7 +1066,7 @@ function addImagesToGallery(files) {
   showGalleryWrap();
 }
 
-// â”€â”€ CLEAR all screenshots and reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CLEAR all screenshots and reset ─────────────────
 function clearAllScreenshots() {
   // Revoke all object URLs to prevent memory leaks
   ocrQueue.forEach(item => {
@@ -1081,7 +1081,7 @@ function clearAllScreenshots() {
   setOverallProgress(0, 0, false);
 }
 
-// â”€â”€ REMOVE a single screenshot from the queue â”€â”€â”€â”€â”€â”€â”€
+// ── REMOVE a single screenshot from the queue ───────
 function removeScreenshot(id) {
   const idx = ocrQueue.findIndex(q => q.id === id);
   if (idx === -1) return;
@@ -1096,12 +1096,12 @@ function removeScreenshot(id) {
   }
 }
 
-// â”€â”€ SHOW the gallery wrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SHOW the gallery wrap ────────────────────────────
 function showGalleryWrap() {
   document.getElementById('ocr-gallery-wrap').style.display = 'block';
 }
 
-// â”€â”€ RENDER the full thumbnail grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── RENDER the full thumbnail grid ──────────────────
 function renderGallery() {
   const grid       = document.getElementById('ocr-thumb-grid');
   const countBadge = document.getElementById('ocr-gallery-count');
@@ -1123,10 +1123,10 @@ function renderGallery() {
   grid.innerHTML = ocrQueue.map((item, index) => {
     const statusClass = `ocr-thumb-status--${item.status}`;
     const statusIcon  = {
-      pending: 'â³',
+      pending: '⏳',
       running: '',        // spinner rendered separately
-      done:    'âœ…',
-      error:   'âŒ'
+      done:    '✅',
+      error:   '❌'
     }[item.status] || '';
 
     const pct = Math.round(item.progress * 100);
@@ -1164,7 +1164,7 @@ function renderGallery() {
         <!-- Overlay: error state -->
         ${isError ? `
         <div class="ocr-thumb-overlay ocr-thumb-overlay--error">
-          <span style="font-size:1.4rem">âŒ</span>
+          <span style="font-size:1.4rem">❌</span>
         </div>` : ''}
 
         <!-- Progress bar at bottom of image (running) -->
@@ -1181,7 +1181,7 @@ function renderGallery() {
         ${isDone   ? `<span class="ocr-thumb-badge ocr-thumb-badge--done">Done</span>` : ''}
         ${isError  ? `<span class="ocr-thumb-badge ocr-thumb-badge--error" title="${item.error}">Error</span>` : ''}
         ${item.status === 'pending' ? `<span class="ocr-thumb-badge ocr-thumb-badge--pending">Pending</span>` : ''}
-        <button class="ocr-thumb-remove" title="Remove" onclick="removeScreenshot('${item.id}')">âœ•</button>
+        <button class="ocr-thumb-remove" title="Remove" onclick="removeScreenshot('${item.id}')">✕</button>
       </div>
       <div class="ocr-thumb-meta" title="${meta}">${meta}</div>
 
@@ -1189,7 +1189,7 @@ function renderGallery() {
   }).join('');
 }
 
-// â”€â”€ OVERALL progress bar (shown while OCR runs) â”€â”€â”€â”€â”€â”€
+// ── OVERALL progress bar (shown while OCR runs) ──────
 function setOverallProgress(done, total, visible, customLabel = '') {
   const wrap  = document.getElementById('ocr-overall-progress');
   const bar   = document.getElementById('ocr-overall-bar');
@@ -1201,7 +1201,7 @@ function setOverallProgress(done, total, visible, customLabel = '') {
   if (label) label.textContent = customLabel || `Processing ${done} / ${total} (${pct}%)`;
 }
 
-// â”€â”€ UPDATE run-button spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── UPDATE run-button spinner ────────────────────────
 function setRunBtnState(running, text = '') {
   const btn     = document.getElementById('ocr-run-btn');
   const spinner = btn ? btn.querySelector('.ocr-run-spinner') : null;
@@ -1213,11 +1213,11 @@ function setRunBtnState(running, text = '') {
 }
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  RUN ALL OCR  â€”  sequential to avoid Tesseract worker
+// ═══════════════════════════════════════════════════════
+//  RUN ALL OCR  —  sequential to avoid Tesseract worker
 //  conflicts and to keep memory usage low on mobile.
 //  We process images one at a time with a shared worker.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
 
 async function runAllOCR() {
   if (ocrRunning) return;
@@ -1338,7 +1338,7 @@ async function runAllOCR() {
 }
 
 /**
- * Lightweight per-thumb progress update while running â€”
+ * Lightweight per-thumb progress update while running —
  * avoids full renderGallery() on every Tesseract tick.
  */
 function updateThumbProgress(id, progress) {
@@ -1370,9 +1370,9 @@ function mergeOcrTextToTextarea() {
 }
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
 //  DRAG-TO-REORDER thumbnails
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
 
 let dragSrcId = null;
 
@@ -1407,21 +1407,21 @@ function thumbDrop(e, targetId) {
   if (ocrQueue.some(q => q.status === 'done')) mergeOcrTextToTextarea();
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  FILTER / SEARCH HANDLERS
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 function handleSearch(e) { searchQuery = e.target.value; renderOrdersTable(); }
 function handleFilterStatus(e) { filterStatus = e.target.value; renderOrdersTable(); }
 function handleFilterCity(e) { filterCity = e.target.value; renderOrdersTable(); }
 function handleFilterProduct(e) { filterProduct = e.target.value; renderOrdersTable(); }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 //  INIT
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   loadSettings();
-  loadReference();   // â† restore persisted reference toggle
+  loadReference();   // ← restore persisted reference toggle
   updateStats();
   initDropZone();
   navigate('extract');
