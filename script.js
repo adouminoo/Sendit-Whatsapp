@@ -12,32 +12,120 @@ const CITY_MAP = {
 
 // City aliases/shortcuts
 const CITY_ALIASES = {
+  // ── City-level aliases ───────────────────────────────────────
   "casa": "casablanca",
   "casablanca": "casablanca",
   "csa": "casablanca",
+  "casa blanca": "casablanca",
   "rabat": "rabat",
-  "fes": "fes", "fès": "fes",
-  "meknes": "meknes", "meknès": "meknes",
-  "tanger": "tanger", "tangier": "tanger",
+  "fes": "fes", "fès": "fes", "fez": "fes",
+  "meknes": "meknes", "meknès": "meknes", "meknes": "meknes",
+  "tanger": "tanger", "tangier": "tanger", "tanja": "tanger",
   "agadir": "agadir",
-  "marrakech": "marrakech", "marrakesh": "marrakech",
+  "marrakech": "marrakech", "marrakesh": "marrakech", "marrakch": "marrakech",
   "oujda": "oujda",
-  "tetouan": "tetouan", "tétouan": "tetouan",
+  "tetouan": "tetouan", "tétouan": "tetouan", "tetuan": "tetouan",
   "nador": "nador",
-  "kenitra": "kenitra", "kénitra": "kenitra",
+  "kenitra": "kenitra", "kénitra": "kenitra", "knitra": "kenitra",
   "sale": "sale", "salé": "sale",
   "temara": "temara", "témara": "temara",
   "settat": "settat",
   "berrechid": "berrechid",
-  "beni mellal": "beni mellal", "béni mellal": "beni mellal",
+  "beni mellal": "beni mellal", "béni mellal": "beni mellal", "benimelal": "beni mellal",
   "khouribga": "khouribga",
-  "mohammedia": "mohammedia",
+  "mohammedia": "mohammedia", "mohamedia": "mohammedia",
   "el jadida": "el jadida",
   "safi": "safi",
   "essaouira": "essaouira",
   "tiznit": "tiznit",
   "agadir inzegane": "inzegane",
   "inzgane": "inzegane",
+
+  // ── Casablanca neighborhood shortcuts ────────────────────────
+  // These expand "casa maarif" → "casablanca - maarif" via alias + neighborhood logic
+  "maarif": "casablanca - maarif",
+  "maârif": "casablanca - maarif",
+  "maaref": "casablanca - maarif",
+  "maarfi": "casablanca - maarif",
+  "anfa": "casablanca - anfa",
+  "bourgogne": "casablanca - bourgogne",
+  "bourgone": "casablanca - bourgogne",
+  "bourgoune": "casablanca - bourgogne",
+  "racine": "casablanca - racine",
+  "ain diab": "casablanca - ain diab",
+  "sidi maarouf": "casablanca - sidi maârouf",
+  "sidi maârouf": "casablanca - sidi maârouf",
+  "sidi maarrouf": "casablanca - sidi maârouf",
+  "californie": "casablanca - californie",
+  "oasis": "casablanca - oasis",
+  "ain sebaa": "casablanca - ain sebaa",
+  "ain chok": "casablanca - ain chok",
+  "hay hassani": "casablanca - hay hassani",
+  "lissassfa": "casablanca - lissassfa",
+  "lissasfa": "casablanca - lissassfa",
+  "lisasfa": "casablanca - lissassfa",
+  "oulfa": "casablanca - oulfa",
+  "cil": "casablanca - cil",
+  "beausejour": "casablanca - beauséjour",
+  "beauséjour": "casablanca - beauséjour",
+  "bernoussi": "casablanca - bernoussi",
+  "ben msik": "casablanca - ben msik",
+  "hay mohammedi": "casablanca - hay mohammedi",
+  "derb ghalef": "casablanca - derb ghalef",
+  "les hopitaux": "casablanca - les hôpitaux",
+  "les hôpitaux": "casablanca - les hôpitaux",
+  "mers sultan": "casablanca - mers sultan",
+  "la gironde": "casablanca - la gironde",
+  "garage allal": "casablanca - garage allal",
+  "hay moulay rachid": "casablanca - hay moulay rachid",
+  "roches noires": "casablanca - roches noires",
+  "belvedere": "casablanca - belvédère",
+  "belvédère": "casablanca - belvédère",
+  "ain borja": "casablanca - ain borja",
+  "sbata": "casablanca - sbata",
+  "centre ville": "casablanca - centre ville",
+  "gauthier": "casablanca - gauthier",
+  "sidi belyout": "casablanca - sidi belyout",
+  "ancienne medina": "casablanca - ancienne medina",
+  "derb omar": "casablanca - derb omar",
+  "sidi moumen": "casablanca - sidi moumen",
+  "sidi othmane": "casablanca - sidi othmane",
+  "hay moulay abdellah": "casablanca - hay moulay abdellah",
+  "palmier": "casablanca - palmier",
+  "2 mars": "casablanca - 2 mars",
+  "autres quartiers": "casablanca - autres quartiers",
+  "abdelmoumen": "casablanca - abdelmoumen",
+  "jawhara": "casablanca - jawhara",
+  "ghandi": "casablanca - ghandi",
+  "el hank": "casablanca - el hank",
+  "hay tissir": "casablanca - hay tissir",
+  "hay el farah": "casablanca - hay el farah",
+  "habous": "casablanca - habous",
+  "bachkou": "casablanca - bachkou",
+  "derb milan": "casablanca - derb milan",
+  "derb alkabir": "casablanca - derb alkabir",
+  "val fleurie": "casablanca - val fleurie",
+  "riveira": "casablanca - riveira",
+  "bournazel": "casablanca - bournazel",
+  "floride": "casablanca - floride",
+  "mandarona": "casablanca - mandarona",
+  "polo": "casablanca - polo",
+  "hay assalama": "casablanca - hay assalama",
+  "attacharok": "casablanca - attacharok",
+  "derb sultan": "casablanca - derb sultan",
+  "hay al inara": "casablanca - hay al inara",
+  "anassi": "casablanca - anassi",
+  "azhar": "casablanca - azhar",
+  "salmia": "casablanca - salmia",
+  "lahraouine": "casablanca - lahraouine",
+  "al fida": "casablanca - al fida",
+  "nassim ii": "casablanca - nassim ii",
+  "al mostakbal": "casablanca - al mostakbal",
+  "sid al khadir": "casablanca - sid al khadir",
+  "el hana": "casablanca - el hana",
+  "tantonville": "casablanca - tantonville",
+  "france ville ii": "casablanca - france ville ii",
+  "lamkansa": "casablanca - lamkansa",
 };
 
 // ─────────────────────────────────────────
@@ -153,20 +241,345 @@ function cleanPrice(price) {
   return isNaN(n) ? 0 : n;
 }
 
+// ─────────────────────────────────────────
+//  CITY MATCHING PIPELINE  (v2.0)
+// ─────────────────────────────────────────
+
+/**
+ * Normalize a city string for matching:
+ *  - lowercase
+ *  - remove accents / diacritics (NFD + strip combining marks)
+ *  - normalize hyphens and spaces
+ *  - collapse duplicate spaces
+ *  - trim surrounding whitespace / punctuation
+ */
+function normalizeCity(str) {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')                        // decompose accents
+    .replace(/[\u0300-\u036f]/g, '')         // strip combining diacritical marks
+    .toLowerCase()
+    .replace(/[''`]/g, "'")                  // unify apostrophes
+    .replace(/\s*[-–—]\s*/g, ' - ')          // normalize hyphens with surrounding spaces
+    .replace(/[^\w\s\-']/g, ' ')             // strip punctuation except hyphens/apostrophes
+    .replace(/\s+/g, ' ')                    // collapse spaces
+    .trim();
+}
+
+/**
+ * Build a normalized lookup index from a city map.
+ * Returns: Map<normalizedKey, { id, name }>
+ */
+function buildNormalizedIndex(cityMap) {
+  const index = new Map();
+  for (const [name, id] of Object.entries(cityMap)) {
+    const norm = normalizeCity(name);
+    if (norm) index.set(norm, { id, name });
+  }
+  return index;
+}
+
+// The live combined map (CITY_MAP + API districts)
+let _liveCityMap = null;
+let _normalizedIndex = null;  // Map<norm, {id, name}>
+
+function getLiveCityMap() {
+  if (_liveCityMap) return _liveCityMap;
+  // Merge: start with hardcoded map, then overlay anything from localStorage
+  _liveCityMap = Object.assign({}, CITY_MAP);
+  try {
+    const cached = localStorage.getItem('sendit_districts_cache');
+    if (cached) {
+      const { districts } = JSON.parse(cached);
+      if (Array.isArray(districts)) {
+        for (const d of districts) {
+          try {
+            const id = parseInt(d.id, 10);
+            const ville = String(d.ville || '').trim().toLowerCase();
+            const dname = String(d.name || '').trim().toLowerCase();
+            if (!dname) continue;
+            const key = ville && dname ? `${ville} - ${dname}` : dname;
+            if (!_liveCityMap[key]) _liveCityMap[key] = id;
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+  return _liveCityMap;
+}
+
+function getNormalizedIndex() {
+  if (_normalizedIndex) return _normalizedIndex;
+  _normalizedIndex = buildNormalizedIndex(getLiveCityMap());
+  return _normalizedIndex;
+}
+
+/** Invalidate caches when API data is refreshed */
+function invalidateCityCache() {
+  _liveCityMap = null;
+  _normalizedIndex = null;
+}
+
+/**
+ * Levenshtein distance between two strings (for fuzzy matching).
+ * Only computed for strings up to length 30 for performance.
+ */
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (a.length > 30 || b.length > 30) return Infinity;
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/**
+ * Extract the neighborhood part from "city - neighborhood" strings.
+ * e.g. "casablanca - maarif" → "maarif"
+ */
+function extractNeighborhood(norm) {
+  const m = norm.match(/^[a-z]+ - (.+)$/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Core city finder — multi-stage with full debug logging.
+ *
+ * Stage 1: Exact normalized match
+ * Stage 2: Casablanca neighborhood shorthand  (e.g. "maarif" → "casablanca - maarif")
+ * Stage 3: Alias expansion + exact match
+ * Stage 4: Prefix / suffix match
+ * Stage 5: Substring containment
+ * Stage 6: Fuzzy (Levenshtein ≤ 2) on neighborhood tokens
+ * Stage 7: Fallback (ID 31) ONLY if nothing found
+ */
 function findBestCity(cityInput) {
-  const raw = String(cityInput).toLowerCase().trim();
-  if (CITY_ALIASES[raw]) {
-    const aliased = CITY_ALIASES[raw];
-    if (CITY_MAP[aliased] !== undefined) return { id: CITY_MAP[aliased], name: aliased };
+  const raw = String(cityInput || '').trim();
+  const norm = normalizeCity(raw);
+  const index = getNormalizedIndex();
+  const liveMap = getLiveCityMap();
+
+  let matched = null;
+  let stage = '?';
+
+  // ── Stage 1: exact normalized match ──────────────────────────
+  if (index.has(norm)) {
+    matched = index.get(norm);
+    stage = 'exact';
   }
-  if (CITY_MAP[raw] !== undefined) return { id: CITY_MAP[raw], name: raw };
-  for (const k of Object.keys(CITY_MAP)) {
-    if (k.startsWith(raw) || raw.startsWith(k)) return { id: CITY_MAP[k], name: k };
+
+  // ── Stage 2: Casablanca neighborhood shorthand ───────────────
+  // If input is just a neighborhood name (no city prefix),
+  // try prepending known cities, prioritising Casablanca.
+  if (!matched && !norm.includes(' - ')) {
+    const casaKey = `casablanca - ${norm}`;
+    if (index.has(casaKey)) {
+      matched = index.get(casaKey);
+      stage = 'casa-neighborhood';
+    }
+    if (!matched) {
+      // Try all cities
+      for (const [k, v] of index) {
+        const nbhd = extractNeighborhood(k);
+        if (nbhd && nbhd === norm) { matched = v; stage = 'neighborhood'; break; }
+      }
+    }
   }
-  for (const k of Object.keys(CITY_MAP)) {
-    if (k.includes(raw) || raw.includes(k)) return { id: CITY_MAP[k], name: k };
+
+  // ── Stage 3: Alias expansion ──────────────────────────────────
+  if (!matched) {
+    const normAliasMap = Object.entries(CITY_ALIASES).map(([a, c]) => [normalizeCity(a), normalizeCity(c)]);
+
+    // Direct alias: norm matches alias exactly → canonical may be a full district key
+    for (const [normAlias, normCanonical] of normAliasMap) {
+      if (norm === normAlias) {
+        if (index.has(normCanonical)) {
+          matched = index.get(normCanonical);
+          stage = 'alias-direct';
+          break;
+        }
+      }
+    }
+    // Alias prefix: e.g. "casa maarif" → "casablanca - maarif"
+    if (!matched) {
+      for (const [normAlias, normCanonical] of normAliasMap) {
+        if (norm.startsWith(normAlias + ' - ') || norm.startsWith(normAlias + ' ')) {
+          const remainder = norm.startsWith(normAlias + ' - ')
+            ? norm.slice(normAlias.length + 3)
+            : norm.slice(normAlias.length + 1);
+          const guessKey = `${normCanonical} - ${remainder}`;
+          if (index.has(guessKey)) {
+            matched = index.get(guessKey);
+            stage = 'alias-neighborhood';
+            break;
+          }
+          // Also try canonical as the full key directly
+          if (index.has(normCanonical)) {
+            matched = index.get(normCanonical);
+            stage = 'alias-city';
+            break;
+          }
+        }
+      }
+    }
   }
-  return { id: 31, name: 'casablanca - centre ville' };
+
+  // ── Stage 4: Prefix / starts-with match ──────────────────────
+  if (!matched) {
+    for (const [k, v] of index) {
+      if (k.startsWith(norm) || norm.startsWith(k)) {
+        // Avoid matching a bare city name when we have a neighborhood in norm
+        if (norm.includes(' - ') && !k.includes(' - ')) continue;
+        matched = v; stage = 'prefix'; break;
+      }
+    }
+  }
+
+  // ── Stage 5: Substring containment ───────────────────────────
+  if (!matched) {
+    let bestLen = 0;
+    for (const [k, v] of index) {
+      if (k.includes(norm) || norm.includes(k)) {
+        // Prefer longer (more specific) matches
+        if (k.length > bestLen) { matched = v; stage = 'substring'; bestLen = k.length; }
+      }
+    }
+  }
+
+  // ── Stage 6: Fuzzy matching (Levenshtein) ────────────────────
+  if (!matched) {
+    let bestDist = 3; // threshold: allow up to 2 edits
+    // Try matching the neighborhood part if input looks like "city - nbhd"
+    const normNbhd = extractNeighborhood(norm) || norm;
+
+    for (const [k, v] of index) {
+      const kNbhd = extractNeighborhood(k) || k;
+      const dist = levenshtein(normNbhd, kNbhd);
+      if (dist < bestDist) {
+        bestDist = dist;
+        matched = v;
+        stage = `fuzzy(d=${dist})`;
+      }
+    }
+  }
+
+  // ── Stage 7: Hard fallback ────────────────────────────────────
+  if (!matched) {
+    matched = { id: 31, name: 'casablanca - centre ville' };
+    stage = 'FALLBACK';
+  }
+
+  console.log('CITY MATCH', {
+    input: raw,
+    normalized: norm,
+    stage,
+    matched: matched.name,
+    matchedId: matched.id,
+  });
+
+  return matched;
+}
+
+// ─────────────────────────────────────────
+//  DYNAMIC DISTRICT LOADER  (Sendit API)
+// ─────────────────────────────────────────
+
+const DISTRICT_CACHE_KEY = 'sendit_districts_cache';
+const DISTRICT_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+const DISTRICT_REFRESH_HOUR_UTC = 5;                 // 5:00 AM GMT
+
+/** Returns true if the cache is stale or missing */
+function isDistrictCacheStale() {
+  try {
+    const raw = localStorage.getItem(DISTRICT_CACHE_KEY);
+    if (!raw) return true;
+    const { savedAt } = JSON.parse(raw);
+    if (!savedAt) return true;
+    return (Date.now() - savedAt) > DISTRICT_CACHE_TTL;
+  } catch (_) { return true; }
+}
+
+/**
+ * Fetch all district pages from Sendit API and cache them.
+ * Requires a valid Bearer token from CONFIG.
+ */
+async function fetchAndCacheDistricts() {
+  const token = (typeof CONFIG !== 'undefined' && CONFIG.API_TOKEN) || CONFIG?.API_KEY;
+  if (!token) {
+    console.warn('[Districts] No API token available — skipping refresh');
+    return;
+  }
+
+  const BASE = (typeof CONFIG !== 'undefined' && CONFIG.BASE_URL) || 'https://app.sendit.ma/api/v1';
+  const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
+  const allDistricts = [];
+
+  try {
+    let page = 1;
+    while (true) {
+      const res = await fetch(`${BASE}/districts?page=${page}`, { headers });
+      if (!res.ok) { console.warn('[Districts] HTTP', res.status, 'on page', page); break; }
+      const data = await res.json();
+      const districts = data.data || [];
+      if (!districts.length) break;
+      allDistricts.push(...districts);
+      if (page >= (data.last_page || page)) break;
+      page++;
+      await new Promise(r => setTimeout(r, 150)); // polite delay
+    }
+
+    if (allDistricts.length > 0) {
+      localStorage.setItem(DISTRICT_CACHE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        districts: allDistricts,
+      }));
+      invalidateCityCache();
+      console.log(`[Districts] Cached ${allDistricts.length} districts from API`);
+    }
+  } catch (err) {
+    console.warn('[Districts] Fetch error:', err);
+  }
+}
+
+/**
+ * Schedule the next weekly refresh at 5:00 AM UTC.
+ * Called once on startup; re-schedules itself after each run.
+ */
+function scheduleWeeklyDistrictRefresh() {
+  const now = new Date();
+  const nextRun = new Date(now);
+
+  // Find the next occurrence of 05:00 UTC
+  nextRun.setUTCHours(DISTRICT_REFRESH_HOUR_UTC, 0, 0, 0);
+  if (nextRun <= now) nextRun.setUTCDate(nextRun.getUTCDate() + 1); // tomorrow
+
+  const delay = nextRun - now;
+  console.log(`[Districts] Next scheduled refresh in ${Math.round(delay / 1000 / 60)} min (${nextRun.toUTCString()})`);
+
+  setTimeout(async () => {
+    console.log('[Districts] Running scheduled weekly refresh...');
+    await fetchAndCacheDistricts();
+    scheduleWeeklyDistrictRefresh(); // reschedule for next day / next week
+  }, delay);
+}
+
+/** Boot: load cache if stale, then schedule weekly refreshes at 5 AM GMT */
+async function initDistrictLoader() {
+  if (isDistrictCacheStale()) {
+    console.log('[Districts] Cache missing or stale — refreshing now...');
+    await fetchAndCacheDistricts();
+  } else {
+    console.log('[Districts] Cache is fresh — using cached districts');
+    invalidateCityCache(); // merge cached data into live map
+  }
+  scheduleWeeklyDistrictRefresh();
 }
 
 function validateOrder(o) {
@@ -1423,6 +1836,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadReference();   // ← restore persisted reference toggle
   updateStats();
+  initDistrictLoader(); // ← load API districts + schedule weekly 5 AM GMT refresh
   initDropZone();
   navigate('extract');
 
