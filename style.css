@@ -2025,3 +2025,63 @@ input[type="checkbox"] {
     font-size: 0.7rem;
   }
 }
+
+/* ──────────────── City Autocomplete ──────────────── */
+.city-autocomplete-wrap {
+  position: relative;
+}
+
+.city-ac-list {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 9999;
+  min-width: 260px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 4px 0;
+}
+
+.city-ac-item {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.city-ac-item:hover,
+.city-ac-active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+.city-ac-none {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ──────────────── Customer History Badge ──────────────── */
+.cust-hist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  border-radius: 20px;
+  background: rgba(var(--accent-rgb, 99,102,241), 0.1);
+  border: 1px solid rgba(var(--accent-rgb, 99,102,241), 0.25);
+  font-size: 0.68rem;
+  font-weight: 600;
+  vertical-align: middle;
+  cursor: default;
+  letter-spacing: 0.01em;
+}

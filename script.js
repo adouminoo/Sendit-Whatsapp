@@ -767,7 +767,7 @@ async function handleAnalyze() {
 
   try {
     const orders = await extractOrders(text);
-    pendingOrders = orders.map(o => ({
+    const newOrders = orders.map(o => ({
       id: uid(),
       name: o.name || 'Client',
       phone: cleanPhone(o.phone || ''),
@@ -778,8 +778,11 @@ async function handleAnalyze() {
       status: 'pending',
       timestamp: Date.now()
     }));
+    // Append to existing pending orders — never wipe the list
+    pendingOrders.push(...newOrders);
+    document.getElementById('message-input').value = '';
     renderPendingTable();
-    toast('success', 'Extraction complete', `${pendingOrders.length} order(s) found.`);
+    toast('success', 'Extraction complete', `${newOrders.length} new order(s) added. ${pendingOrders.length} total pending.`);
   } catch(e) {
     toast('error', 'AI Error', e.message);
   } finally {
@@ -805,11 +808,13 @@ function renderPendingTable() {
     const errs = validateOrder(o);
     const city = findBestCity(o.city);
     const isValid = errs.length === 0;
+    const hist = getCustomerHistory(o.phone);
+    const histBadge = hist ? renderHistoryBadge(hist) : '';
     return `<tr class="${isValid ? '' : 'invalid'}" data-id="${o.id}">
       <td><input type="checkbox" class="pending-chk" data-idx="${i}" onchange="togglePendingSelect()"></td>
-      <td class="editable" onclick="editPending(${i},'name')" data-field="name">${o.name}</td>
+      <td class="editable" onclick="editPending(${i},'name')" data-field="name">${o.name}${histBadge}</td>
       <td class="editable" onclick="editPending(${i},'phone')" data-field="phone"><span style="font-family:var(--font-mono);font-size:0.8rem">${o.phone}</span></td>
-      <td class="editable" onclick="editPendingCity(${i})" data-field="city">${o.city} <span style="color:var(--text-muted);font-size:0.7rem">(${city.id})</span></td>
+      <td onclick="editPendingCity(${i})" data-field="city" style="cursor:pointer">${o.city} <span style="color:var(--text-muted);font-size:0.7rem">(${city.id})</span></td>
       <td class="editable" onclick="editPending(${i},'product')" data-field="product">${o.product}</td>
       <td class="editable" onclick="editPending(${i},'price')" data-field="price">${fmtPrice(o.price)}</td>
       <td><span class="${isValid ? 'status-badge status-confirmed' : 'status-badge status-cancelled'}">${isValid ? 'Ready' : 'Invalid'}</span></td>
@@ -834,9 +839,216 @@ function editPendingCity(idx) {
   const o = pendingOrders[idx];
   const td = document.querySelector(`#pending-tbody tr:nth-child(${idx+1}) td[data-field="city"]`);
   if (!td) return;
-  const opts = Object.keys(CITY_MAP).map(k => `<option value="${k}" ${k===o.city?'selected':''}>${k}</option>`).join('');
-  td.innerHTML = `<select class="inline-edit" style="font-size:0.78rem" onchange="savePending(${idx},'city',this.value)" onblur="renderPendingTable()">${opts}</select>`;
-  td.querySelector('select').focus();
+
+  // Build autocomplete widget
+  td.innerHTML = `
+    <div class="city-autocomplete-wrap" style="position:relative">
+      <input
+        class="inline-edit city-ac-input"
+        value="${o.city}"
+        placeholder="Type 3+ chars…"
+        autocomplete="off"
+        oninput="cityAcSearch(this,${idx})"
+        onkeydown="cityAcKey(event,${idx})"
+        onblur="cityAcBlur(${idx})"
+      >
+      <ul class="city-ac-list" id="city-ac-${idx}"></ul>
+    </div>`;
+  td.querySelector('input').focus();
+}
+
+/** Live search — fires after every keystroke */
+function cityAcSearch(input, idx) {
+  const q = normalizeCity(input.value);
+  const list = document.getElementById(`city-ac-${idx}`);
+  if (!list) return;
+
+  if (q.length < 3) { list.innerHTML = ''; list.style.display = 'none'; return; }
+
+  const liveMap = getLiveCityMap();
+  // Score every key: exact prefix > contains > neighborhood contains
+  const results = [];
+  for (const [name, id] of Object.entries(liveMap)) {
+    const norm = normalizeCity(name);
+    if (norm.startsWith(q))        results.push({ name, id, score: 0 });
+    else if (norm.includes(q))     results.push({ name, id, score: 1 });
+  }
+  results.sort((a, b) => a.score - b.score || a.name.localeCompare(b.name));
+  const top = results.slice(0, 12);
+
+  if (!top.length) { list.innerHTML = '<li class="city-ac-none">No match</li>'; list.style.display = 'block'; return; }
+
+  list.innerHTML = top.map((r, i) =>
+    `<li class="city-ac-item" data-idx="${idx}" data-name="${r.name}" data-i="${i}"
+        onmousedown="cityAcPick(${idx},'${r.name.replace(/'/g,"\\'")}')">
+      ${r.name} <span style="color:var(--text-muted);font-size:0.7rem">#${r.id}</span>
+    </li>`
+  ).join('');
+  list.style.display = 'block';
+}
+
+/** Keyboard nav in autocomplete */
+function cityAcKey(e, idx) {
+  const list = document.getElementById(`city-ac-${idx}`);
+  if (!list) return;
+  const items = list.querySelectorAll('.city-ac-item');
+  const active = list.querySelector('.city-ac-active');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = active ? active.nextElementSibling : items[0];
+    if (next) { active?.classList.remove('city-ac-active'); next.classList.add('city-ac-active'); }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = active?.previousElementSibling;
+    if (prev) { active.classList.remove('city-ac-active'); prev.classList.add('city-ac-active'); }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (active) cityAcPick(idx, active.dataset.name);
+    else {
+      // Treat current input value as manual entry
+      const input = list.closest('.city-autocomplete-wrap')?.querySelector('input');
+      if (input) { savePending(idx, 'city', input.value); }
+    }
+  } else if (e.key === 'Escape') {
+    renderPendingTable();
+  }
+}
+
+function cityAcPick(idx, name) {
+  savePending(idx, 'city', name);
+}
+
+function cityAcBlur(idx) {
+  // Delay so mousedown on list item fires first
+  setTimeout(() => {
+    const wrap = document.querySelector(`#pending-tbody tr:nth-child(${idx+1}) .city-autocomplete-wrap`);
+    if (wrap) {
+      const input = wrap.querySelector('input');
+      if (input) savePending(idx, 'city', input.value);
+    }
+  }, 180);
+}
+
+// ─────────────────────────────────────────
+//  CUSTOMER HISTORY BADGE
+// ─────────────────────────────────────────
+
+/**
+ * Return history stats for a phone number from sentOrders.
+ * Returns null if customer has no prior orders.
+ */
+function getCustomerHistory(phone) {
+  const clean = cleanPhone(String(phone || ''));
+  if (!clean) return null;
+
+  // Check both sentOrders and the customers profile map
+  const profile = customers[clean];
+  const orders = profile?.orders || sentOrders.filter(o => cleanPhone(o.phone) === clean);
+  if (!orders.length) return null;
+
+  const total     = orders.length;
+  const delivered = orders.filter(o => o.status === 'delivered').length;
+  const cancelled = orders.filter(o => o.status === 'cancelled').length;
+  return { total, delivered, cancelled };
+}
+
+/**
+ * Renders a tiny inline badge: 📦3 ✅2 ❌1
+ * shown right after the customer name.
+ */
+function renderHistoryBadge({ total, delivered, cancelled }) {
+  const pending = total - delivered - cancelled;
+  let tip = `${total} total order${total>1?'s':''}`;
+  if (delivered) tip += ` · ${delivered} delivered`;
+  if (cancelled) tip += ` · ${cancelled} cancelled`;
+  if (pending > 0) tip += ` · ${pending} in progress`;
+
+  return `<span class="cust-hist-badge" title="${tip}" style="margin-left:5px;white-space:nowrap;font-size:0.7rem;opacity:0.85">` +
+    `📦${total}` +
+    (delivered ? ` ✅${delivered}` : '') +
+    (cancelled ? ` ❌${cancelled}` : '') +
+    `</span>`;
+}
+
+// ─────────────────────────────────────────
+//  DELIVERY STATUS POLLER  (Sendit webhook substitute)
+// ─────────────────────────────────────────
+
+const POLL_INTERVAL_MS  = 15 * 60 * 1000; // every 15 min
+const POLL_TRACK_STATES = new Set(['sent', 'confirmed', 'pending']); // statuses worth re-checking
+
+let _pollTimer = null;
+
+/** Fetch latest status for one order from Sendit API */
+async function fetchSenditOrderStatus(senditId, token) {
+  const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries/${senditId}`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.data?.status || data?.status || null;
+}
+
+/** Map Sendit status strings to our internal statuses */
+function mapSenditStatus(raw) {
+  if (!raw) return null;
+  const s = String(raw).toLowerCase();
+  if (s.includes('deliver') || s.includes('livr'))  return 'delivered';
+  if (s.includes('cancel') || s.includes('annul'))  return 'cancelled';
+  if (s.includes('confirm'))                         return 'confirmed';
+  if (s.includes('transit') || s.includes('cours')) return 'sent';
+  return null;
+}
+
+/** Poll all trackable sent orders and update statuses */
+async function pollDeliveryStatuses() {
+  const trackable = sentOrders.filter(o =>
+    POLL_TRACK_STATES.has(o.status) && o.senditData?.id
+  );
+  if (!trackable.length) return;
+
+  let token;
+  try { token = await getSenditToken(); } catch (_) { return; }
+
+  let updated = 0;
+  for (const order of trackable) {
+    try {
+      const rawStatus = await fetchSenditOrderStatus(order.senditData.id, token);
+      const mapped = mapSenditStatus(rawStatus);
+      if (mapped && mapped !== order.status) {
+        order.status = mapped;
+        updated++;
+      }
+      await new Promise(r => setTimeout(r, 200)); // be polite
+    } catch (_) {}
+  }
+
+  if (updated > 0) {
+    saveData();
+    updateStats();
+    renderOrdersTable();
+    toast('info', '📡 Status sync', `${updated} order${updated>1?'s':''} updated from Sendit`);
+  }
+}
+
+/** Start periodic polling — called once on init */
+function startStatusPoller() {
+  if (_pollTimer) return;
+  // First poll after 2 min (give time for orders to be sent first)
+  _pollTimer = setTimeout(function tick() {
+    pollDeliveryStatuses().catch(() => {});
+    _pollTimer = setTimeout(tick, POLL_INTERVAL_MS);
+  }, 2 * 60 * 1000);
+}
+
+/** Manual sync button handler */
+async function manualStatusSync() {
+  const btn = document.getElementById('btn-sync-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing…'; }
+  try { await pollDeliveryStatuses(); }
+  finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📡 Sync Status'; }
+  }
 }
 
 function savePending(idx, field, value) {
@@ -1837,6 +2049,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadReference();   // ← restore persisted reference toggle
   updateStats();
   initDistrictLoader(); // ← load API districts + schedule weekly 5 AM GMT refresh
+  startStatusPoller();  // ← begin periodic Sendit delivery status polling
   initDropZone();
   navigate('extract');
 
