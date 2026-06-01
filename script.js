@@ -241,6 +241,33 @@ function cleanPrice(price) {
   return isNaN(n) ? 0 : n;
 }
 
+const DARIJA_TRANS = { '3': 'a', '7': 'h', '9': 'q', '2': 'a', '5': 'kh', '8': 'gh' };
+const AI_CITY_RESOLVE_CANDIDATE_LIMIT = 45;
+const AI_CITY_CONFIDENCE_MIN = 0.45;
+
+function transliterateDarija(str) {
+  if (!/[a-zA-ZÀ-ÿ\u0600-\u06FF]/.test(String(str || ''))) return str;
+  return String(str).replace(/[379258]/g, ch => DARIJA_TRANS[ch] || ch);
+}
+
+function stripCodeFence(content) {
+  return String(content || '').replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function shortText(value, max = 40) {
+  const text = String(value || '').trim();
+  return text.length > max ? text.slice(0, max) + '...' : text;
+}
+
 // ─────────────────────────────────────────
 //  CITY MATCHING PIPELINE  (v2.0)
 // ─────────────────────────────────────────
@@ -255,7 +282,7 @@ function cleanPrice(price) {
  */
 function normalizeCity(str) {
   if (!str) return '';
-  return String(str)
+  return transliterateDarija(String(str))
     .normalize('NFD')                        // decompose accents
     .replace(/[\u0300-\u036f]/g, '')         // strip combining diacritical marks
     .toLowerCase()
@@ -487,6 +514,119 @@ function findBestCity(cityInput) {
   return matched;
 }
 
+function getCityResolveCandidates(input, limit = AI_CITY_RESOLVE_CANDIDATE_LIMIT) {
+  const norm = normalizeCity(input);
+  const ignored = new Set(['res', 'num', 'numero', 'porte', 'garage', 'cote', 'ecole']);
+  const tokens = new Set(norm.split(/\s+/).filter(t => t.length >= 3 && !ignored.has(t)));
+  const results = [];
+
+  for (const [name, id] of Object.entries(getLiveCityMap())) {
+    const cityNorm = normalizeCity(name);
+    const nbhdNorm = extractNeighborhood(cityNorm) || cityNorm;
+    let score = 0;
+
+    if (cityNorm === norm) score += 120;
+    if (nbhdNorm === norm) score += 110;
+    if (cityNorm.startsWith(norm) || norm.startsWith(cityNorm)) score += 85;
+    if (nbhdNorm.startsWith(norm) || norm.startsWith(nbhdNorm)) score += 80;
+    if (norm && (cityNorm.includes(norm) || norm.includes(cityNorm))) score += 70;
+    if (norm && (nbhdNorm.includes(norm) || norm.includes(nbhdNorm))) score += 75;
+
+    for (const token of tokens) {
+      if (cityNorm.split(/\s+/).includes(token)) score += 12;
+      else if (cityNorm.includes(token)) score += 6;
+    }
+
+    const dist = levenshtein(norm, nbhdNorm);
+    if (dist <= 2) score += 55 - dist * 10;
+
+    if (score > 0) results.push({ id, name, score });
+  }
+
+  return results
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .filter((item, index, arr) => arr.findIndex(x => x.id === item.id) === index)
+    .slice(0, limit);
+}
+
+function findCandidateByAiChoice(choice, candidates) {
+  const wantedId = parseInt(choice?.id, 10);
+  if (wantedId) {
+    const byId = candidates.find(c => c.id === wantedId);
+    if (byId) return byId;
+  }
+
+  const wantedName = normalizeCity(choice?.name || choice?.districtName || choice?.district || '');
+  if (!wantedName) return null;
+  return candidates.find(c => normalizeCity(c.name) === wantedName) || null;
+}
+
+async function resolveCityWithAI(order) {
+  const rawCity = String(order?.city || '').trim();
+  const rawAddress = String(order?.address || '').trim();
+  const candidateText = [rawCity, rawAddress].filter(Boolean).join(' ');
+  const candidates = getCityResolveCandidates(candidateText || rawCity);
+
+  if (!candidates.length) return null;
+
+  const prompt = `Choose the best Sendit.ma delivery district for this Moroccan order.
+Interpret Darija/Arabizi spellings and number substitutions, for example m3arif means maarif and hay 7assani means hay hassani.
+Use the city/neighborhood for routing only. Do not put street, residence, building, floor, apartment, or landmark details into the district.
+Choose ONLY from the candidate list. If the exact neighborhood is not available, choose the closest city-level candidate.
+
+Order city field: ${rawCity || '(empty)'}
+Full address field: ${rawAddress || '(empty)'}
+
+Candidates:
+${JSON.stringify(candidates.map(({ id, name }) => ({ id, name })))}
+
+Return ONLY JSON:
+{"id":0,"name":"","confidence":0.0,"reason":""}`;
+
+  const res = await fetch(CONFIG.API_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: CONFIG.OPENAI_MODEL || 'gpt-4o-mini',
+      max_tokens: 250,
+      temperature: 0,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `OpenAI city resolve error ${res.status}`);
+  }
+
+  const data = await res.json();
+  const parsed = JSON.parse(stripCodeFence(data.choices[0].message.content));
+  const chosen = findCandidateByAiChoice(parsed, candidates);
+  const confidence = Number(parsed.confidence || 0);
+  if (!chosen || confidence < AI_CITY_CONFIDENCE_MIN) return null;
+
+  console.log('AI CITY RESOLVE', {
+    inputCity: rawCity,
+    inputAddress: rawAddress,
+    matched: chosen.name,
+    matchedId: chosen.id,
+    confidence,
+    reason: parsed.reason || ''
+  });
+
+  return { id: chosen.id, name: chosen.name };
+}
+
+async function resolveCityForOrder(order) {
+  try {
+    const aiCity = await resolveCityWithAI(order);
+    if (aiCity) return aiCity;
+  } catch (err) {
+    console.warn('[City AI] Falling back to local city matcher:', err);
+  }
+  return findBestCity(order.city || order.address || '');
+}
+
 // ─────────────────────────────────────────
 //  DYNAMIC DISTRICT LOADER  (Sendit API)
 // ─────────────────────────────────────────
@@ -511,13 +651,13 @@ function isDistrictCacheStale() {
  * Requires a valid Bearer token from CONFIG.
  */
 async function fetchAndCacheDistricts() {
-  const token = (typeof CONFIG !== 'undefined' && CONFIG.API_TOKEN) || CONFIG?.API_KEY;
+  const token = await getSenditToken().catch(() => null);
   if (!token) {
     console.warn('[Districts] No API token available — skipping refresh');
     return;
   }
 
-  const BASE = (typeof CONFIG !== 'undefined' && CONFIG.BASE_URL) || 'https://app.sendit.ma/api/v1';
+  const BASE = (typeof CONFIG !== 'undefined' && CONFIG.SENDIT_BASE_URL) || 'https://app.sendit.ma/api/v1';
   const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
   const allDistricts = [];
 
@@ -720,13 +860,26 @@ Examples:
 "casa bourgogne" → "casablanca - bourgogne"
 "anfa" → "casablanca - anfa"
 
-For other cities, return the most specific known area possible.- product: what the customer wants to buy
+For other cities, return the most specific known area possible.
+- address: the FULL delivery address for the driver.
+  Include street number, residence name, building, floor, apartment, landmarks, and neighborhood detail.
+  Do NOT reduce address to only the city. If no specific address is given, copy the city here.
+- product: what the customer wants to buy
 - price: NUMBER ONLY (e.g. 250, not "250 dh")
 - notes: short AI summary in English (1-2 sentences about the customer's request/tone)
 
+City/address separation examples:
+"Numero 19 Res Mesk Lil Hay Riad Rabat (porte garage a cote ecole belge de Rabat)"
+-> city: "Rabat"
+-> address: "Numero 19 Res Mesk Lil Hay Riad, porte garage a cote ecole belge de Rabat"
+
+"casa m3arif, residence al wifaq apt 3 etage 2"
+-> city: "casablanca - maarif"
+-> address: "Residence al wifaq, appartement 3, etage 2, Maarif Casablanca"
+
 Return ONLY a JSON array (even for 1 order). No markdown, no explanation.
 Format:
-[{"name":"","phone":"","city":"","product":"","price":0,"notes":""}]
+[{"name":"","phone":"","city":"","address":"","product":"","price":0,"notes":""}]
 
 Message:
 ${text}`;
@@ -748,8 +901,7 @@ ${text}`;
   }
 
   const data = await res.json();
-  let content = data.choices[0].message.content.trim();
-  content = content.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+  let content = stripCodeFence(data.choices[0].message.content);
   const parsed = JSON.parse(content);
   return Array.isArray(parsed) ? parsed : [parsed];
 }
@@ -772,6 +924,7 @@ async function handleAnalyze() {
       name: o.name || 'Client',
       phone: cleanPhone(o.phone || ''),
       city: o.city || '',
+      address: (o.address && String(o.address).trim()) ? String(o.address).trim() : (o.city || ''),
       product: o.product || '',
       price: o.price || 0,
       notes: o.notes || '',
@@ -815,6 +968,7 @@ function renderPendingTable() {
       <td class="editable" onclick="editPending(${i},'name')" data-field="name">${o.name}${histBadge}</td>
       <td class="editable" onclick="editPending(${i},'phone')" data-field="phone"><span style="font-family:var(--font-mono);font-size:0.8rem">${o.phone}</span></td>
       <td onclick="editPendingCity(${i})" data-field="city" style="cursor:pointer">${o.city} <span style="color:var(--text-muted);font-size:0.7rem">(${city.id})</span></td>
+      <td class="editable" onclick="editPending(${i},'address')" data-field="address" title="${escapeHtml(o.address || '')}">${escapeHtml(shortText(o.address || o.city, 50))}</td>
       <td class="editable" onclick="editPending(${i},'product')" data-field="product">${o.product}</td>
       <td class="editable" onclick="editPending(${i},'price')" data-field="price">${fmtPrice(o.price)}</td>
       <td><span class="${isValid ? 'status-badge status-confirmed' : 'status-badge status-cancelled'}">${isValid ? 'Ready' : 'Invalid'}</span></td>
@@ -831,7 +985,7 @@ function editPending(idx, field) {
   const td = document.querySelector(`#pending-tbody tr:nth-child(${idx+1}) td[data-field="${field}"]`);
   if (!td) return;
   const oldVal = String(o[field]);
-  td.innerHTML = `<input class="inline-edit" value="${oldVal}" onblur="savePending(${idx},'${field}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
+  td.innerHTML = `<input class="inline-edit" value="${escapeHtml(oldVal)}" onblur="savePending(${idx},'${field}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
   td.querySelector('input').focus();
 }
 
@@ -1055,6 +1209,7 @@ function savePending(idx, field, value) {
   if (field === 'phone') value = cleanPhone(value);
   if (field === 'price') value = cleanPrice(value);
   pendingOrders[idx][field] = value;
+  if (field === 'city' && !pendingOrders[idx].address) pendingOrders[idx].address = value;
   setTimeout(renderPendingTable, 50);
 }
 
@@ -1099,7 +1254,10 @@ async function getSenditToken() {
 
 async function sendToSendit(order) {
   const token = await getSenditToken();
-  const city = findBestCity(order.city);
+  const city = await resolveCityForOrder(order);
+  const fullAddress = (order.address && String(order.address).trim())
+    ? String(order.address).trim()
+    : (order.city || city.name);
 
   // Build base payload
   const payload = {
@@ -1109,7 +1267,7 @@ async function sendToSendit(order) {
     phone: cleanPhone(order.phone),
     products: order.product,
     amount: cleanPrice(order.price),
-    address: order.city,
+    address: fullAddress,
     comment: '(SH)',
     packaging_id: 1
   };
@@ -1198,7 +1356,7 @@ Bonjour ${order.name},
 Votre commande a bien été enregistrée :
 📦 Produit : ${order.product}
 💰 Prix : ${price}
-📍 Ville : ${order.city}
+📍 Adresse : ${order.address || order.city}
 📞 Téléphone : ${order.phone}
 
 Notre livreur vous contactera prochainement.
@@ -1227,6 +1385,7 @@ function renderOrdersTable() {
       (o.name||'').toLowerCase().includes(q) ||
       (o.phone||'').includes(q) ||
       (o.city||'').toLowerCase().includes(q) ||
+      (o.address||'').toLowerCase().includes(q) ||
       (o.product||'').toLowerCase().includes(q)
     );
   }
@@ -1259,6 +1418,7 @@ function renderOrdersTable() {
       <td><input type="checkbox" class="order-chk" data-id="${o.id}" onchange="toggleOrderSelect('${o.id}',this.checked)"></td>
       <td><span style="font-weight:600">${o.name}</span><br><span style="color:var(--text-muted);font-size:0.75rem;font-family:var(--font-mono)">${o.phone}</span></td>
       <td>${o.city}</td>
+      <td title="${escapeHtml(o.address || '')}">${escapeHtml(shortText(o.address || o.city, 50))}</td>
       <td>${o.product}</td>
       <td style="font-family:var(--font-mono);font-size:0.82rem">${fmtPrice(o.price)}</td>
       <td>${statusBadge(o.status)}</td>
@@ -1347,7 +1507,7 @@ function handleSortClick(field) {
 //  EXPORT CSV / JSON
 // ─────────────────────────────────────────
 function exportCSV() {
-  const cols = ['name','phone','city','product','price','status','sentAt'];
+  const cols = ['name','phone','city','address','product','price','status','sentAt'];
   const rows = [cols.join(',')];
   sentOrders.forEach(o => {
     rows.push(cols.map(c => {
