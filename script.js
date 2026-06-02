@@ -1201,17 +1201,10 @@ function renderHistoryBadge({ total, delivered, cancelled }) {
 const POLL_INTERVAL_MS  = 15 * 60 * 1000; // every 15 min
 const POLL_TRACK_STATES = new Set(['sent', 'confirmed', 'pending']); // statuses worth re-checking
 
-let _pollTimer = null;
+// All known reference values — used to pull orders from Sendit API by reference
+const KNOWN_REFERENCES = ['adam-BOT', 'Amine-BOT', 'Yassir-BOT'];
 
-/** Fetch latest status for one order from Sendit API */
-async function fetchSenditOrderStatus(senditCode, token) {
-  const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries/${senditCode}`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data?.data?.status || data?.status || null;
-}
+let _pollTimer = null;
 
 /** Map Sendit status strings to our internal statuses */
 function mapSenditStatus(raw) {
@@ -1225,35 +1218,186 @@ function mapSenditStatus(raw) {
   return null;
 }
 
-/** Poll all trackable sent orders and update statuses */
-async function pollDeliveryStatuses() {
-  const trackable = sentOrders.filter(o =>
-    POLL_TRACK_STATES.has(normalizeOrderStatus(o.status)) && (o.senditData?.code || o.senditData?.id)
-  );
-  if (!trackable.length) return;
+/** Fetch latest status for a single delivery by its Sendit code/ID */
+async function fetchSenditOrderStatus(senditCode, token) {
+  const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries/${senditCode}`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.data?.status || data?.status || null;
+}
 
+/**
+ * Fetch all deliveries for a given reference from Sendit (paginated).
+ * Returns an array of Sendit delivery objects.
+ */
+async function fetchSenditDeliveriesByReference(reference, token) {
+  const BASE = CONFIG.SENDIT_BASE_URL || 'https://app.sendit.ma/api/v1';
+  const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
+  const results = [];
+  let page = 1;
+
+  try {
+    while (true) {
+      const url = `${BASE}/deliveries?reference=${encodeURIComponent(reference)}&page=${page}&per_page=50`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) break;
+      const data = await res.json();
+      const items = data?.data?.data || data?.data || [];
+      if (!Array.isArray(items) || !items.length) break;
+      results.push(...items);
+      const lastPage = data?.data?.last_page || data?.last_page || page;
+      if (page >= lastPage) break;
+      page++;
+      await new Promise(r => setTimeout(r, 150));
+    }
+  } catch (err) {
+    console.warn(`[StatusSync] Error fetching deliveries for reference "${reference}":`, err);
+  }
+
+  return results;
+}
+
+/**
+ * Match a Sendit delivery object to a local sentOrder.
+ * Tries to match by Sendit code, then by phone+product.
+ */
+function matchSenditDeliveryToLocal(delivery) {
+  const senditCode = String(delivery?.code || delivery?.id || '');
+  const senditPhone = cleanPhone(String(delivery?.phone || ''));
+
+  // 1. Match by Sendit code (most reliable)
+  if (senditCode) {
+    const byCode = sentOrders.find(o =>
+      String(o.senditData?.code || o.senditData?.id || '') === senditCode
+    );
+    if (byCode) return byCode;
+  }
+
+  // 2. Match by phone + product (fuzzy fallback for orders not sent from tool)
+  if (senditPhone) {
+    const byPhone = sentOrders.filter(o => cleanPhone(o.phone) === senditPhone);
+    if (byPhone.length === 1) return byPhone[0];
+
+    // If multiple orders for same phone, also match on product name substring
+    const senditProduct = String(delivery?.products || '').toLowerCase();
+    if (senditProduct) {
+      const byProduct = byPhone.find(o =>
+        (o.product || '').toLowerCase().includes(senditProduct) ||
+        senditProduct.includes((o.product || '').toLowerCase())
+      );
+      if (byProduct) return byProduct;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Core sync function.
+ *
+ * Strategy:
+ *   1. For each KNOWN_REFERENCE, fetch all deliveries from Sendit API →
+ *      match them to local orders → update status + attach senditData if missing.
+ *   2. For any local "trackable" orders that still have a senditData code but
+ *      weren't captured by step 1, fall back to individual GET requests.
+ *
+ * This means orders entered manually or via other tools will be discovered
+ * as long as they share a reference we know about.
+ */
+async function pollDeliveryStatuses() {
   let token;
   try { token = await getSenditToken(); } catch (_) { return; }
 
   let updated = 0;
-  for (const order of trackable) {
+  const matchedCodes = new Set(); // track which Sendit codes we've already processed
+
+  // ── Step 1: Reference-based bulk sync ─────────────────────────────────────
+  for (const ref of KNOWN_REFERENCES) {
+    const deliveries = await fetchSenditDeliveriesByReference(ref, token);
+    console.log(`[StatusSync] Reference "${ref}" → ${deliveries.length} deliveries from API`);
+
+    for (const delivery of deliveries) {
+      const senditCode = String(delivery?.code || delivery?.id || '');
+      if (senditCode) matchedCodes.add(senditCode);
+
+      const rawStatus = delivery?.status || null;
+      const mapped = mapSenditStatus(rawStatus);
+      if (!mapped) continue;
+
+      // Try to match to an existing local order
+      const local = matchSenditDeliveryToLocal(delivery);
+
+      if (local) {
+        // Update status if changed
+        if (mapped !== normalizeOrderStatus(local.status)) {
+          local.status = mapped;
+          updated++;
+        }
+        // Attach senditData if the order was created outside this tool
+        if (!local.senditData && senditCode) {
+          local.senditData = delivery;
+          local.reference = local.reference || ref;
+        }
+      } else {
+        // Order exists in Sendit but NOT in our local list → import it
+        const phone = cleanPhone(String(delivery?.phone || ''));
+        if (phone) {
+          const imported = {
+            id: uid(),
+            name: delivery?.name || 'Client',
+            phone,
+            city: delivery?.district?.ville || delivery?.district?.name || '',
+            address: delivery?.address || '',
+            product: delivery?.products || '',
+            price: delivery?.amount || 0,
+            notes: '(imported from Sendit)',
+            status: mapped,
+            reference: ref,
+            sentAt: delivery?.created_at ? new Date(delivery.created_at).getTime() : Date.now(),
+            labelUrl: delivery?.label_url || '',
+            senditData: delivery
+          };
+          sentOrders.push(imported);
+          addCustomerRecord(imported);
+          updated++;
+          console.log(`[StatusSync] Imported new order from Sendit: ${imported.name} / ${imported.phone}`);
+        }
+      }
+
+      await new Promise(r => setTimeout(r, 80));
+    }
+  }
+
+  // ── Step 2: Individual fallback for locally-tracked orders not caught above ─
+  const remaining = sentOrders.filter(o =>
+    POLL_TRACK_STATES.has(normalizeOrderStatus(o.status)) &&
+    (o.senditData?.code || o.senditData?.id) &&
+    !matchedCodes.has(String(o.senditData?.code || o.senditData?.id || ''))
+  );
+
+  for (const order of remaining) {
     try {
       const rawStatus = await fetchSenditOrderStatus(order.senditData.code || order.senditData.id, token);
       const mapped = mapSenditStatus(rawStatus);
-      if (mapped && mapped !== order.status) {
+      if (mapped && mapped !== normalizeOrderStatus(order.status)) {
         order.status = mapped;
         updated++;
       }
-      await new Promise(r => setTimeout(r, 200)); // be polite
+      await new Promise(r => setTimeout(r, 200));
     } catch (_) {}
   }
 
+  // ── Persist & refresh UI ───────────────────────────────────────────────────
   if (updated > 0) {
     saveData();
     updateStats();
     updateReferenceStats();
     renderOrdersTable();
     toast('info', '📡 Status sync', `${updated} order${updated>1?'s':''} updated from Sendit`);
+  } else {
+    console.log('[StatusSync] No changes detected');
   }
 }
 
