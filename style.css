@@ -1402,6 +1402,81 @@ input[type="checkbox"] {
 }
 
 /* ──────────────── Orders Toolbar ──────────────── */
+.reference-report {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.02);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.reference-report-head {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.reference-report-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.reference-report-subtitle {
+  margin-top: 3px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.reference-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.reference-stat-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  padding: 12px;
+  min-width: 0;
+}
+.reference-stat-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+.reference-stat-total {
+  margin-top: 8px;
+  font-size: 1.8rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.reference-stat-lines {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.reference-stat-good { color: var(--green); }
+.reference-stat-bad { color: var(--red); }
+.reference-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(61,126,255,0.12);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.reference-badge--none {
+  background: rgba(148,163,184,0.12);
+  color: var(--text-muted);
+}
 .orders-toolbar {
   display: flex;
   gap: 10px;
@@ -1432,6 +1507,12 @@ input[type="checkbox"] {
   gap: 8px;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .reference-report-head { flex-direction: column; }
+  .reference-report-head .filter-select { width: 100%; }
+  .reference-stats-grid { grid-template-columns: 1fr; }
 }
 
 /* ──────────────── Customers Grid ──────────────── */

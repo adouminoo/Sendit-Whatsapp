@@ -299,6 +299,23 @@
           </div>
           <div class="panel-body">
 
+            <div class="reference-report">
+              <div class="reference-report-head">
+                <div>
+                  <div class="reference-report-title">Reference performance</div>
+                  <div class="reference-report-subtitle">Filter orders and compare delivered vs cancelled results.</div>
+                </div>
+                <select id="filter-reference" class="filter-select" aria-label="Filter by reference">
+                  <option value="">All references</option>
+                  <option value="adam-BOT">Adam</option>
+                  <option value="Amine-BOT">Amine</option>
+                  <option value="Yassir-BOT">Yassir</option>
+                  <option value="__none__">No reference</option>
+                </select>
+              </div>
+              <div id="reference-stats-grid" class="reference-stats-grid"></div>
+            </div>
+
             <!-- Toolbar -->
             <div class="orders-toolbar">
               <input
@@ -379,6 +396,7 @@
                       Price <span class="sort-arrow">▼</span>
                     </th>
                     <th>Status</th>
+                    <th>Reference</th>
                     <th id="th-timestamp" class="sortable">
                       Date <span class="sort-arrow">▼</span>
                     </th>

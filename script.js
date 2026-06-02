@@ -141,6 +141,7 @@ let sortAsc       = false;
 let filterStatus  = '';
 let filterCity    = '';
 let filterProduct = '';
+let filterReference = '';
 let searchQuery   = '';
 
 // ─────────────────────────────────────────
@@ -750,6 +751,51 @@ function avatarLetter(name) {
   return (name || 'C').trim().charAt(0).toUpperCase();
 }
 
+function getOrderReference(order) {
+  return order?.reference || order?.senditData?.reference || order?.senditData?.data?.reference || '';
+}
+
+function getReferenceLabel(ref) {
+  const labels = { 'adam-BOT': 'Adam', 'Amine-BOT': 'Amine', 'Yassir-BOT': 'Yassir' };
+  if (ref === '__none__') return 'No reference';
+  return labels[ref] || ref || 'All references';
+}
+
+function matchesReferenceFilter(order, ref = filterReference) {
+  if (!ref) return true;
+  const orderRef = getOrderReference(order);
+  if (ref === '__none__') return !orderRef;
+  return orderRef === ref;
+}
+
+function normalizeOrderStatus(status) {
+  const s = String(status || '').toLowerCase();
+  if (s === 'delivered' || s.includes('livre') || s.includes('livré')) return 'delivered';
+  if (s === 'delivering' || s.includes('livraison')) return 'sent';
+  if (s.includes('cancel') || s.includes('annul') || s.includes('reject') || s.includes('refus')) return 'cancelled';
+  if (s.includes('confirm')) return 'confirmed';
+  if (s.includes('transit') || s.includes('cours') || s.includes('sent')) return 'sent';
+  return s || 'pending';
+}
+
+function getOrderActivityTime(order) {
+  return order?.sentAt || order?.timestamp || order?.senditData?.last_action_at || order?.senditData?.created_at || 0;
+}
+
+function getReferenceWindowStats(days) {
+  const since = Date.now() - days * 24 * 60 * 60 * 1000;
+  const scoped = sentOrders.filter(order => {
+    const t = new Date(getOrderActivityTime(order)).getTime();
+    return Number.isFinite(t) && t >= since && matchesReferenceFilter(order);
+  });
+  const delivered = scoped.filter(o => normalizeOrderStatus(o.status) === 'delivered').length;
+  const cancelled = scoped.filter(o => normalizeOrderStatus(o.status) === 'cancelled').length;
+  const revenue = scoped
+    .filter(o => normalizeOrderStatus(o.status) === 'delivered')
+    .reduce((sum, o) => sum + cleanPrice(o.price), 0);
+  return { total: scoped.length, delivered, cancelled, revenue };
+}
+
 // ─────────────────────────────────────────
 //  TOAST
 // ─────────────────────────────────────────
@@ -797,6 +843,7 @@ function navigate(view) {
   if (view === 'orders') renderOrdersTable();
   if (view === 'customers') renderCustomers();
   updateStats();
+  updateReferenceStats();
 }
 
 function openSidebar() {
@@ -813,9 +860,9 @@ function closeSidebar() {
 // ─────────────────────────────────────────
 function updateStats() {
   const total = sentOrders.length;
-  const delivered = sentOrders.filter(o => o.status === 'delivered').length;
+  const delivered = sentOrders.filter(o => normalizeOrderStatus(o.status) === 'delivered').length;
   const revenue = sentOrders.reduce((s, o) => s + cleanPrice(o.price), 0);
-  const pending = sentOrders.filter(o => o.status === 'pending' || o.status === 'sent').length;
+  const pending = sentOrders.filter(o => ['pending','sent'].includes(normalizeOrderStatus(o.status))).length;
 
   setText('stat-total', total);
   setText('stat-total-card', total);
@@ -829,6 +876,29 @@ function updateStats() {
 function setText(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
+}
+
+function updateReferenceStats() {
+  const grid = document.getElementById('reference-stats-grid');
+  if (!grid) return;
+  const selectedLabel = getReferenceLabel(filterReference);
+  grid.innerHTML = [7, 14, 30].map(days => {
+    const stats = getReferenceWindowStats(days);
+    const deliveredRate = stats.total ? Math.round((stats.delivered / stats.total) * 100) : 0;
+    const cancelledRate = stats.total ? Math.round((stats.cancelled / stats.total) * 100) : 0;
+    return `<div class="reference-stat-card">
+      <div class="reference-stat-top">
+        <span>${days} days</span>
+        <span>${escapeHtml(selectedLabel)}</span>
+      </div>
+      <div class="reference-stat-total">${stats.total}</div>
+      <div class="reference-stat-lines">
+        <span class="reference-stat-good">Delivered: ${stats.delivered} (${deliveredRate}%)</span>
+        <span class="reference-stat-bad">Cancelled: ${stats.cancelled} (${cancelledRate}%)</span>
+        <span>Revenue: ${stats.revenue ? stats.revenue.toLocaleString('fr-MA') + ' DH' : '0 DH'}</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─────────────────────────────────────────
@@ -1134,8 +1204,8 @@ const POLL_TRACK_STATES = new Set(['sent', 'confirmed', 'pending']); // statuses
 let _pollTimer = null;
 
 /** Fetch latest status for one order from Sendit API */
-async function fetchSenditOrderStatus(senditId, token) {
-  const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries/${senditId}`, {
+async function fetchSenditOrderStatus(senditCode, token) {
+  const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries/${senditCode}`, {
     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
   });
   if (!res.ok) return null;
@@ -1147,7 +1217,8 @@ async function fetchSenditOrderStatus(senditId, token) {
 function mapSenditStatus(raw) {
   if (!raw) return null;
   const s = String(raw).toLowerCase();
-  if (s.includes('deliver') || s.includes('livr'))  return 'delivered';
+  if (s === 'delivered' || s.includes('livre') || s.includes('livré'))  return 'delivered';
+  if (s === 'delivering' || s.includes('livraison')) return 'sent';
   if (s.includes('cancel') || s.includes('annul'))  return 'cancelled';
   if (s.includes('confirm'))                         return 'confirmed';
   if (s.includes('transit') || s.includes('cours')) return 'sent';
@@ -1157,7 +1228,7 @@ function mapSenditStatus(raw) {
 /** Poll all trackable sent orders and update statuses */
 async function pollDeliveryStatuses() {
   const trackable = sentOrders.filter(o =>
-    POLL_TRACK_STATES.has(o.status) && o.senditData?.id
+    POLL_TRACK_STATES.has(normalizeOrderStatus(o.status)) && (o.senditData?.code || o.senditData?.id)
   );
   if (!trackable.length) return;
 
@@ -1167,7 +1238,7 @@ async function pollDeliveryStatuses() {
   let updated = 0;
   for (const order of trackable) {
     try {
-      const rawStatus = await fetchSenditOrderStatus(order.senditData.id, token);
+      const rawStatus = await fetchSenditOrderStatus(order.senditData.code || order.senditData.id, token);
       const mapped = mapSenditStatus(rawStatus);
       if (mapped && mapped !== order.status) {
         order.status = mapped;
@@ -1180,6 +1251,7 @@ async function pollDeliveryStatuses() {
   if (updated > 0) {
     saveData();
     updateStats();
+    updateReferenceStats();
     renderOrdersTable();
     toast('info', '📡 Status sync', `${updated} order${updated>1?'s':''} updated from Sendit`);
   }
@@ -1301,11 +1373,19 @@ async function sendSinglePending(idx) {
 
     if (res.ok && (data.status === 'success' || data.data)) {
       const labelUrl = data.data?.label_url || '';
-      const saved = { ...order, status: 'sent', sentAt: Date.now(), labelUrl, senditData: data.data };
+      const saved = {
+        ...order,
+        status: normalizeOrderStatus(data.data?.status || 'sent'),
+        reference: getActiveReferenceValue() || data.data?.reference || '',
+        sentAt: Date.now(),
+        labelUrl,
+        senditData: data.data
+      };
       sentOrders.unshift(saved);
       addCustomerRecord(saved);
       saveData();
       updateStats();
+      updateReferenceStats();
       pendingOrders.splice(idx, 1);
       renderPendingTable();
       toast('success', 'Order Sent! 🎉', `${order.name} — ${order.product}`);
@@ -1386,12 +1466,14 @@ function renderOrdersTable() {
       (o.phone||'').includes(q) ||
       (o.city||'').toLowerCase().includes(q) ||
       (o.address||'').toLowerCase().includes(q) ||
+      getOrderReference(o).toLowerCase().includes(q) ||
       (o.product||'').toLowerCase().includes(q)
     );
   }
-  if (filterStatus) orders = orders.filter(o => o.status === filterStatus);
+  if (filterStatus) orders = orders.filter(o => normalizeOrderStatus(o.status) === filterStatus);
   if (filterCity)   orders = orders.filter(o => (o.city||'').toLowerCase().includes(filterCity.toLowerCase()));
   if (filterProduct)orders = orders.filter(o => (o.product||'').toLowerCase().includes(filterProduct.toLowerCase()));
+  if (filterReference) orders = orders.filter(o => matchesReferenceFilter(o));
 
   orders.sort((a, b) => {
     let va = a[sortField], vb = b[sortField];
@@ -1422,10 +1504,11 @@ function renderOrdersTable() {
       <td>${o.product}</td>
       <td style="font-family:var(--font-mono);font-size:0.82rem">${fmtPrice(o.price)}</td>
       <td>${statusBadge(o.status)}</td>
+      <td>${referenceBadge(getOrderReference(o))}</td>
       <td style="color:var(--text-muted);font-size:0.78rem">${fmtDate(o.sentAt)}</td>
       <td>
         <select class="filter-select" style="width:120px;height:32px;font-size:0.78rem" onchange="updateOrderStatus('${o.id}',this.value)">
-          ${['pending','confirmed','sent','delivered','cancelled'].map(s => `<option value="${s}" ${o.status===s?'selected':''}>${capitalize(s)}</option>`).join('')}
+          ${['pending','confirmed','sent','delivered','cancelled'].map(s => `<option value="${s}" ${normalizeOrderStatus(o.status)===s?'selected':''}>${capitalize(s)}</option>`).join('')}
         </select>
         ${o.labelUrl ? `<a href="${o.labelUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:4px">🏷️</a>` : ''}
         <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteOrder('${o.id}')">🗑</button>
@@ -1434,7 +1517,13 @@ function renderOrdersTable() {
 }
 
 function statusBadge(status) {
-  return `<span class="status-badge status-${status}">${capitalize(status)}</span>`;
+  const normalized = normalizeOrderStatus(status);
+  return `<span class="status-badge status-${normalized}">${capitalize(normalized)}</span>`;
+}
+
+function referenceBadge(ref) {
+  if (!ref) return '<span class="reference-badge reference-badge--none">None</span>';
+  return `<span class="reference-badge">${escapeHtml(getReferenceLabel(ref))}</span>`;
 }
 
 function capitalize(s) {
@@ -1443,13 +1532,19 @@ function capitalize(s) {
 
 function updateOrderStatus(id, status) {
   const order = sentOrders.find(o => o.id === id);
-  if (order) { order.status = status; saveData(); updateStats(); }
+  if (order) {
+    order.status = status;
+    saveData();
+    updateStats();
+    updateReferenceStats();
+    renderOrdersTable();
+  }
 }
 
 function deleteOrder(id) {
   if (!confirm('Delete this order?')) return;
   sentOrders = sentOrders.filter(o => o.id !== id);
-  saveData(); updateStats(); renderOrdersTable();
+  saveData(); updateStats(); updateReferenceStats(); renderOrdersTable();
 }
 
 function toggleOrderSelect(id, checked) {
@@ -1474,7 +1569,7 @@ function bulkUpdateStatus(status) {
     if (o) o.status = status;
   });
   selectedRows.clear();
-  saveData(); updateStats(); renderOrdersTable();
+  saveData(); updateStats(); updateReferenceStats(); renderOrdersTable();
   toast('success', 'Status Updated', `Selected orders → ${status}`);
 }
 
@@ -1482,7 +1577,7 @@ function bulkDelete() {
   if (!confirm(`Delete ${selectedRows.size} order(s)?`)) return;
   sentOrders = sentOrders.filter(o => !selectedRows.has(o.id));
   selectedRows.clear();
-  saveData(); updateStats(); renderOrdersTable();
+  saveData(); updateStats(); updateReferenceStats(); renderOrdersTable();
 }
 
 function selectAllOrders(checked) {
@@ -1507,11 +1602,11 @@ function handleSortClick(field) {
 //  EXPORT CSV / JSON
 // ─────────────────────────────────────────
 function exportCSV() {
-  const cols = ['name','phone','city','address','product','price','status','sentAt'];
+  const cols = ['name','phone','city','address','product','price','status','reference','sentAt'];
   const rows = [cols.join(',')];
   sentOrders.forEach(o => {
     rows.push(cols.map(c => {
-      let v = c === 'sentAt' ? fmtDate(o[c]) : (o[c] || '');
+      let v = c === 'sentAt' ? fmtDate(o[c]) : (c === 'reference' ? getOrderReference(o) : (o[c] || ''));
       return `"${String(v).replace(/"/g,'""')}"`;
     }).join(','));
   });
@@ -1595,6 +1690,7 @@ function clearAllData() {
   if (!confirm('This will delete ALL orders and customers from localStorage. Are you sure?')) return;
   sentOrders = []; customers = {};
   saveData(); updateStats();
+  updateReferenceStats();
   renderOrdersTable(); renderCustomers();
   toast('info', 'Data Cleared');
 }
@@ -2199,6 +2295,11 @@ function handleSearch(e) { searchQuery = e.target.value; renderOrdersTable(); }
 function handleFilterStatus(e) { filterStatus = e.target.value; renderOrdersTable(); }
 function handleFilterCity(e) { filterCity = e.target.value; renderOrdersTable(); }
 function handleFilterProduct(e) { filterProduct = e.target.value; renderOrdersTable(); }
+function handleFilterReference(e) {
+  filterReference = e.target.value;
+  updateReferenceStats();
+  renderOrdersTable();
+}
 
 // ─────────────────────────────────────────
 //  INIT
@@ -2263,6 +2364,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Search / filter
   document.getElementById('search-input').addEventListener('input', handleSearch);
   document.getElementById('filter-status').addEventListener('change', handleFilterStatus);
+  document.getElementById('filter-reference').addEventListener('change', handleFilterReference);
   document.getElementById('filter-city-input').addEventListener('input', handleFilterCity);
   document.getElementById('filter-product-input').addEventListener('input', handleFilterProduct);
 
