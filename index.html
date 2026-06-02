@@ -116,6 +116,13 @@
             <div class="stat-card-label">Pending</div>
           </div>
         </div>
+        <div class="stat-card stat-card--purple">
+          <div class="stat-card-icon">⚡</div>
+          <div class="stat-card-body">
+            <div class="stat-card-value" id="stat-delivery-time">—</div>
+            <div class="stat-card-label">Avg Delivery</div>
+          </div>
+        </div>
       </section>
 
       <!-- ═══════════════════════════════════════
@@ -351,11 +358,34 @@
               <div class="toolbar-export">
                 <button id="btn-export-csv" class="btn btn-outline btn-sm">⬇️ CSV</button>
                 <button id="btn-export-json" class="btn btn-outline btn-sm">⬇️ JSON</button>
-                <button id="btn-sync-status" class="btn btn-outline btn-sm" onclick="manualStatusSync()">📡 Sync Status</button>
+
+                <!-- Sync scope + button group -->
+                <div class="sync-group">
+                  <div class="sync-scope-wrap" id="sync-scope-wrap" style="display:none">
+                    <label class="sync-scope-item"><input type="checkbox" class="sync-ref-chk" value="adam-BOT" checked> Adam</label>
+                    <label class="sync-scope-item"><input type="checkbox" class="sync-ref-chk" value="Amine-BOT" checked> Amine</label>
+                    <label class="sync-scope-item"><input type="checkbox" class="sync-ref-chk" value="Yassir-BOT" checked> Yassir</label>
+                  </div>
+                  <div class="sync-btn-row">
+                    <button id="btn-sync-scope-toggle" class="btn btn-ghost btn-sm sync-scope-toggle" title="Choose references to sync" onclick="toggleSyncScope()">☰</button>
+                    <button id="btn-sync-status" class="btn btn-outline btn-sm" onclick="manualStatusSync()">📡 Sync Status</button>
+                  </div>
+                  <div id="sync-last-time" class="sync-last-time" style="display:none">—</div>
+                </div>
+
               </div>
             </div>
 
           </div>
+        </div>
+
+        <!-- Sync history log -->
+        <div class="panel sync-log-panel" id="sync-log-panel" style="margin-top:12px;display:none">
+          <div class="panel-header sync-log-header" onclick="toggleSyncLog()">
+            <h2 class="card-title">📋 Last Sync Report <span id="sync-log-badge" class="sync-log-badge"></span></h2>
+            <span class="sync-log-chevron" id="sync-log-chevron">▼</span>
+          </div>
+          <div class="panel-body sync-log-body" id="sync-log-body" style="display:none"></div>
         </div>
 
         <!-- Bulk action bar -->
@@ -530,12 +560,11 @@
       <div class="modal-footer">
         <button id="btn-copy-confirm" class="btn btn-primary">📋 Copy Message</button>
         <a
-          id="confirm-label-url"
+          id="confirm-label-btn"
           href="#"
           target="_blank"
           rel="noopener"
           class="btn btn-outline"
-          id="confirm-label-btn"
           style="display:none"
         >🏷️ View Label</a>
         <button class="btn btn-ghost modal-close">Close</button>

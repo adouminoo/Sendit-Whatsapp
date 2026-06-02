@@ -2166,3 +2166,183 @@ input[type="checkbox"] {
   cursor: default;
   letter-spacing: 0.01em;
 }
+
+/* ──────────────── Stat card purple (avg delivery) ──────────────── */
+.stat-card--purple { border-left: 4px solid #8b5cf6; }
+.stat-card--purple .stat-card-icon { background: rgba(139,92,246,0.12); }
+
+/* ──────────────── Sync Group (toolbar) ──────────────── */
+.sync-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  position: relative;
+}
+
+.sync-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sync-scope-toggle {
+  font-size: 0.85rem;
+  padding: 0 8px;
+  border-radius: var(--radius-sm, 6px);
+  line-height: 32px;
+  height: 32px;
+}
+.sync-scope-toggle.active {
+  background: var(--accent-glow, rgba(99,102,241,0.12));
+  color: var(--accent, #6366f1);
+  border-color: var(--accent, #6366f1);
+}
+
+.sync-scope-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius, 10px);
+  padding: 8px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 140px;
+}
+
+.sync-scope-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  color: var(--text, #1e293b);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sync-scope-item input { cursor: pointer; }
+
+.sync-last-time {
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ──────────────── Sync Log Panel ──────────────── */
+.sync-log-panel { overflow: hidden; }
+
+.sync-log-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sync-log-header:hover { background: var(--bg, #f8fafc); }
+
+.sync-log-chevron {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.sync-log-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.sync-log-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sync-log-ref {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sync-log-ref-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 60px;
+}
+
+.sync-log-ref-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sync-log-pill {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sync-log-pill--fetched  { background: rgba(99,102,241,0.1); color: #6366f1; }
+.sync-log-pill--matched  { background: rgba(16,185,129,0.1); color: #10b981; }
+.sync-log-pill--updated  { background: rgba(245,158,11,0.1);  color: #f59e0b; }
+.sync-log-pill--imported { background: rgba(139,92,246,0.1);  color: #8b5cf6; }
+
+.sync-log-footer {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ──────────────── New-from-sync row flash ──────────────── */
+@keyframes rowFlash {
+  0%   { background: rgba(139,92,246,0.18); }
+  60%  { background: rgba(139,92,246,0.10); }
+  100% { background: transparent; }
+}
+
+.row-new-sync td {
+  animation: rowFlash 4s ease forwards;
+}
+
+.row-new-sync--fade td {
+  animation: none;
+  background: transparent;
+  transition: background 0.6s ease;
+}
+
+.badge-new-sync {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: rgba(139,92,246,0.15);
+  color: #8b5cf6;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* ──────────────── Per-reference sync button ──────────────── */
+.ref-sync-btn {
+  font-size: 0.9rem;
+  padding: 0 6px;
+  height: 22px;
+  line-height: 22px;
+  border-radius: 4px;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.ref-sync-btn:hover { opacity: 1; transform: rotate(15deg); }

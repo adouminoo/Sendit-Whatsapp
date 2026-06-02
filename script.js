@@ -145,6 +145,94 @@ let filterReference = '';
 let searchQuery   = '';
 
 // ─────────────────────────────────────────
+//  SYNC STATE
+// ─────────────────────────────────────────
+let _lastSyncTime    = null;   // timestamp of last successful sync
+let _syncReport      = null;   // object with last sync stats
+let _syncScopeOpen   = false;  // whether the scope dropdown is showing
+let _newlyImportedIds = new Set(); // order IDs imported in the last sync (for flash badge)
+
+/** Returns the array of reference values currently checked in the sync scope UI */
+function getActiveSyncRefs() {
+  const checks = document.querySelectorAll('.sync-ref-chk');
+  if (!checks.length) return [...KNOWN_REFERENCES]; // fallback: all
+  const active = [...checks].filter(c => c.checked).map(c => c.value);
+  return active.length ? active : [...KNOWN_REFERENCES];
+}
+
+function toggleSyncScope() {
+  _syncScopeOpen = !_syncScopeOpen;
+  const wrap = document.getElementById('sync-scope-wrap');
+  const btn  = document.getElementById('btn-sync-scope-toggle');
+  if (wrap) wrap.style.display = _syncScopeOpen ? 'flex' : 'none';
+  if (btn)  btn.classList.toggle('active', _syncScopeOpen);
+}
+
+function toggleSyncLog() {
+  const body    = document.getElementById('sync-log-body');
+  const chevron = document.getElementById('sync-log-chevron');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.textContent = open ? '▼' : '▲';
+}
+
+/** Update the "Last synced: X ago" label */
+function updateLastSyncedLabel() {
+  const el = document.getElementById('sync-last-time');
+  if (!el) return;
+  if (!_lastSyncTime) { el.style.display = 'none'; return; }
+  const diffMs  = Date.now() - _lastSyncTime;
+  const diffMin = Math.floor(diffMs / 60000);
+  const label   = diffMin < 1 ? 'just now' : diffMin < 60 ? `${diffMin}m ago` : `${Math.floor(diffMin/60)}h ago`;
+  el.textContent = `Last synced: ${label}`;
+  el.style.display = 'block';
+}
+
+/** Render the sync history report panel */
+function renderSyncReport(report) {
+  const panel  = document.getElementById('sync-log-panel');
+  const body   = document.getElementById('sync-log-body');
+  const badge  = document.getElementById('sync-log-badge');
+  if (!panel || !body) return;
+
+  panel.style.display = 'block';
+
+  const total = report.refs.reduce((s, r) => s + r.fetched, 0);
+  if (badge) badge.textContent = `${total} fetched · ${report.updated} updated · ${report.imported} imported`;
+
+  body.innerHTML = `
+    <div class="sync-log-grid">
+      ${report.refs.map(r => `
+        <div class="sync-log-ref">
+          <div class="sync-log-ref-name">${escapeHtml(getReferenceLabel(r.ref))}</div>
+          <div class="sync-log-ref-stats">
+            <span class="sync-log-pill sync-log-pill--fetched">📥 ${r.fetched} fetched</span>
+            <span class="sync-log-pill sync-log-pill--matched">🔗 ${r.matched} matched</span>
+            <span class="sync-log-pill sync-log-pill--updated">✏️ ${r.updated} updated</span>
+            <span class="sync-log-pill sync-log-pill--imported">✨ ${r.imported} imported</span>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="sync-log-footer">
+      Synced at ${new Date(_lastSyncTime).toLocaleTimeString('fr-MA')}
+      · Fallback individual checks: ${report.fallback}
+      · Duration: ${report.durationMs}ms
+    </div>`;
+
+  // Auto-expand if there's something interesting
+  if (report.updated > 0 || report.imported > 0) {
+    const logBody = document.getElementById('sync-log-body');
+    const chevron = document.getElementById('sync-log-chevron');
+    if (logBody) logBody.style.display = 'block';
+    if (chevron) chevron.textContent = '▲';
+  }
+}
+
+// Start a 1-min ticker to keep the "X min ago" label fresh
+setInterval(updateLastSyncedLabel, 60000);
+
+// ─────────────────────────────────────────
 //  REFERENCE TOGGLE STATE
 // ─────────────────────────────────────────
 let activeReference = null; // null = none selected
@@ -858,11 +946,23 @@ function closeSidebar() {
 // ─────────────────────────────────────────
 //  STATS
 // ─────────────────────────────────────────
+
+/** Compute average delivery time in hours for delivered orders that have both sentAt and deliveredAt */
+function getAvgDeliveryHours(orders) {
+  const timed = orders.filter(o =>
+    normalizeOrderStatus(o.status) === 'delivered' && o.sentAt && o.deliveredAt && o.deliveredAt > o.sentAt
+  );
+  if (!timed.length) return null;
+  const avgMs = timed.reduce((s, o) => s + (o.deliveredAt - o.sentAt), 0) / timed.length;
+  return Math.round(avgMs / 3600000 * 10) / 10; // hours, 1 decimal
+}
+
 function updateStats() {
-  const total = sentOrders.length;
+  const total     = sentOrders.length;
   const delivered = sentOrders.filter(o => normalizeOrderStatus(o.status) === 'delivered').length;
-  const revenue = sentOrders.reduce((s, o) => s + cleanPrice(o.price), 0);
-  const pending = sentOrders.filter(o => ['pending','sent'].includes(normalizeOrderStatus(o.status))).length;
+  const revenue   = sentOrders.reduce((s, o) => s + cleanPrice(o.price), 0);
+  const pending   = sentOrders.filter(o => ['pending','sent'].includes(normalizeOrderStatus(o.status))).length;
+  const avgHours  = getAvgDeliveryHours(sentOrders);
 
   setText('stat-total', total);
   setText('stat-total-card', total);
@@ -871,6 +971,10 @@ function updateStats() {
   setText('stat-revenue', revenue ? revenue.toLocaleString('fr-MA') + ' DH' : '0 DH');
   setText('stat-pending', pending);
   setText('stat-pending-card', pending);
+
+  // Delivery time card
+  const dtCard = document.getElementById('stat-delivery-time');
+  if (dtCard) dtCard.textContent = avgHours !== null ? `${avgHours}h` : '—';
 }
 
 function setText(id, val) {
@@ -882,20 +986,42 @@ function updateReferenceStats() {
   const grid = document.getElementById('reference-stats-grid');
   if (!grid) return;
   const selectedLabel = getReferenceLabel(filterReference);
+
+  // Determine which reference to show the ↻ button for (only when a specific ref is selected)
+  const syncRef = filterReference && filterReference !== '__none__' ? filterReference : null;
+
   grid.innerHTML = [7, 14, 30].map(days => {
     const stats = getReferenceWindowStats(days);
     const deliveredRate = stats.total ? Math.round((stats.delivered / stats.total) * 100) : 0;
     const cancelledRate = stats.total ? Math.round((stats.cancelled / stats.total) * 100) : 0;
+
+    // Delivery time for this window + reference filter
+    const since   = Date.now() - days * 24 * 60 * 60 * 1000;
+    const scoped  = sentOrders.filter(o => {
+      const t = new Date(getOrderActivityTime(o)).getTime();
+      return Number.isFinite(t) && t >= since && matchesReferenceFilter(o);
+    });
+    const avgH = getAvgDeliveryHours(scoped);
+    const avgLabel = avgH !== null ? `⏱ Avg delivery: ${avgH}h` : '';
+
+    const syncBtn = syncRef
+      ? `<button class="btn btn-ghost btn-sm ref-sync-btn" data-ref="${syncRef}" title="Sync ${escapeHtml(selectedLabel)}" onclick="syncSingleReference('${syncRef}')">↻</button>`
+      : '';
+
     return `<div class="reference-stat-card">
       <div class="reference-stat-top">
         <span>${days} days</span>
-        <span>${escapeHtml(selectedLabel)}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>${escapeHtml(selectedLabel)}</span>
+          ${syncBtn}
+        </div>
       </div>
       <div class="reference-stat-total">${stats.total}</div>
       <div class="reference-stat-lines">
         <span class="reference-stat-good">Delivered: ${stats.delivered} (${deliveredRate}%)</span>
         <span class="reference-stat-bad">Cancelled: ${stats.cancelled} (${cancelledRate}%)</span>
         <span>Revenue: ${stats.revenue ? stats.revenue.toLocaleString('fr-MA') + ' DH' : '0 DH'}</span>
+        ${avgLabel ? `<span style="color:var(--text-muted);font-size:0.78rem">${avgLabel}</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1199,14 +1325,13 @@ function renderHistoryBadge({ total, delivered, cancelled }) {
 // ─────────────────────────────────────────
 
 const POLL_INTERVAL_MS  = 15 * 60 * 1000; // every 15 min
-const POLL_TRACK_STATES = new Set(['sent', 'confirmed', 'pending']); // statuses worth re-checking
-
-// All known reference values — used to pull orders from Sendit API by reference
-const KNOWN_REFERENCES = ['adam-BOT', 'Amine-BOT', 'Yassir-BOT'];
+const POLL_TRACK_STATES = new Set(['sent', 'confirmed', 'pending']);
+const KNOWN_REFERENCES  = ['adam-BOT', 'Amine-BOT', 'Yassir-BOT'];
+const DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000; // 48-hour duplicate detection window
 
 let _pollTimer = null;
 
-/** Map Sendit status strings to our internal statuses */
+/** Map Sendit status strings → internal statuses */
 function mapSenditStatus(raw) {
   if (!raw) return null;
   const s = String(raw).toLowerCase();
@@ -1218,7 +1343,7 @@ function mapSenditStatus(raw) {
   return null;
 }
 
-/** Fetch latest status for a single delivery by its Sendit code/ID */
+/** Fetch one delivery status by Sendit code */
 async function fetchSenditOrderStatus(senditCode, token) {
   const res = await fetch(`${CONFIG.SENDIT_BASE_URL}/deliveries/${senditCode}`, {
     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
@@ -1228,16 +1353,12 @@ async function fetchSenditOrderStatus(senditCode, token) {
   return data?.data?.status || data?.status || null;
 }
 
-/**
- * Fetch all deliveries for a given reference from Sendit (paginated).
- * Returns an array of Sendit delivery objects.
- */
+/** Fetch all deliveries for one reference (paginated) */
 async function fetchSenditDeliveriesByReference(reference, token) {
   const BASE = CONFIG.SENDIT_BASE_URL || 'https://app.sendit.ma/api/v1';
   const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
   const results = [];
   let page = 1;
-
   try {
     while (true) {
       const url = `${BASE}/deliveries?reference=${encodeURIComponent(reference)}&page=${page}&per_page=50`;
@@ -1253,34 +1374,25 @@ async function fetchSenditDeliveriesByReference(reference, token) {
       await new Promise(r => setTimeout(r, 150));
     }
   } catch (err) {
-    console.warn(`[StatusSync] Error fetching deliveries for reference "${reference}":`, err);
+    console.warn(`[StatusSync] Error fetching reference "${reference}":`, err);
   }
-
   return results;
 }
 
-/**
- * Match a Sendit delivery object to a local sentOrder.
- * Tries to match by Sendit code, then by phone+product.
- */
+/** Match a Sendit delivery to a local sentOrder */
 function matchSenditDeliveryToLocal(delivery) {
-  const senditCode = String(delivery?.code || delivery?.id || '');
+  const senditCode  = String(delivery?.code || delivery?.id || '');
   const senditPhone = cleanPhone(String(delivery?.phone || ''));
 
-  // 1. Match by Sendit code (most reliable)
   if (senditCode) {
     const byCode = sentOrders.find(o =>
       String(o.senditData?.code || o.senditData?.id || '') === senditCode
     );
     if (byCode) return byCode;
   }
-
-  // 2. Match by phone + product (fuzzy fallback for orders not sent from tool)
   if (senditPhone) {
     const byPhone = sentOrders.filter(o => cleanPhone(o.phone) === senditPhone);
     if (byPhone.length === 1) return byPhone[0];
-
-    // If multiple orders for same phone, also match on product name substring
     const senditProduct = String(delivery?.products || '').toLowerCase();
     if (senditProduct) {
       const byProduct = byPhone.find(o =>
@@ -1290,134 +1402,192 @@ function matchSenditDeliveryToLocal(delivery) {
       if (byProduct) return byProduct;
     }
   }
-
   return null;
 }
 
 /**
- * Core sync function.
- *
- * Strategy:
- *   1. For each KNOWN_REFERENCE, fetch all deliveries from Sendit API →
- *      match them to local orders → update status + attach senditData if missing.
- *   2. For any local "trackable" orders that still have a senditData code but
- *      weren't captured by step 1, fall back to individual GET requests.
- *
- * This means orders entered manually or via other tools will be discovered
- * as long as they share a reference we know about.
+ * Duplicate detection: returns true if a recent local order
+ * (within DUPLICATE_WINDOW_MS) has the same phone+product.
  */
-async function pollDeliveryStatuses() {
-  let token;
-  try { token = await getSenditToken(); } catch (_) { return; }
+function isDuplicateImport(phone, product) {
+  const now = Date.now();
+  const cleanPh = cleanPhone(phone);
+  const cleanPr = (product || '').toLowerCase().trim();
+  return sentOrders.some(o => {
+    if (cleanPhone(o.phone) !== cleanPh) return false;
+    const age = now - (o.sentAt || o.timestamp || 0);
+    if (age > DUPLICATE_WINDOW_MS) return false;
+    const oProd = (o.product || '').toLowerCase().trim();
+    return oProd === cleanPr || oProd.includes(cleanPr) || cleanPr.includes(oProd);
+  });
+}
 
-  let updated = 0;
-  const matchedCodes = new Set(); // track which Sendit codes we've already processed
+/**
+ * Core sync. Accepts an optional array of refs to sync (defaults to getActiveSyncRefs).
+ * Returns a report object for the sync history log.
+ */
+async function pollDeliveryStatuses(refsOverride = null) {
+  let token;
+  try { token = await getSenditToken(); } catch (_) { return null; }
+
+  const refsToSync  = refsOverride || getActiveSyncRefs();
+  const matchedCodes = new Set();
+  const t0 = Date.now();
+
+  const report = {
+    refs: [],
+    updated: 0,
+    imported: 0,
+    fallback: 0,
+    durationMs: 0
+  };
+
+  _newlyImportedIds.clear();
 
   // ── Step 1: Reference-based bulk sync ─────────────────────────────────────
-  for (const ref of KNOWN_REFERENCES) {
+  for (const ref of refsToSync) {
     const deliveries = await fetchSenditDeliveriesByReference(ref, token);
-    console.log(`[StatusSync] Reference "${ref}" → ${deliveries.length} deliveries from API`);
+    console.log(`[StatusSync] "${ref}" → ${deliveries.length} deliveries`);
+
+    const refStats = { ref, fetched: deliveries.length, matched: 0, updated: 0, imported: 0 };
 
     for (const delivery of deliveries) {
       const senditCode = String(delivery?.code || delivery?.id || '');
       if (senditCode) matchedCodes.add(senditCode);
 
-      const rawStatus = delivery?.status || null;
-      const mapped = mapSenditStatus(rawStatus);
+      const mapped = mapSenditStatus(delivery?.status);
       if (!mapped) continue;
 
-      // Try to match to an existing local order
       const local = matchSenditDeliveryToLocal(delivery);
 
       if (local) {
-        // Update status if changed
+        refStats.matched++;
         if (mapped !== normalizeOrderStatus(local.status)) {
+          // Feature 7: track first delivery time for analytics
+          if (mapped === 'delivered' && !local.deliveredAt) {
+            local.deliveredAt = Date.now();
+          }
           local.status = mapped;
-          updated++;
+          refStats.updated++;
+          report.updated++;
         }
-        // Attach senditData if the order was created outside this tool
         if (!local.senditData && senditCode) {
           local.senditData = delivery;
-          local.reference = local.reference || ref;
+          local.reference  = local.reference || ref;
         }
       } else {
-        // Order exists in Sendit but NOT in our local list → import it
-        const phone = cleanPhone(String(delivery?.phone || ''));
-        if (phone) {
-          const imported = {
-            id: uid(),
-            name: delivery?.name || 'Client',
-            phone,
-            city: delivery?.district?.ville || delivery?.district?.name || '',
-            address: delivery?.address || '',
-            product: delivery?.products || '',
-            price: delivery?.amount || 0,
-            notes: '(imported from Sendit)',
-            status: mapped,
-            reference: ref,
-            sentAt: delivery?.created_at ? new Date(delivery.created_at).getTime() : Date.now(),
-            labelUrl: delivery?.label_url || '',
-            senditData: delivery
-          };
-          sentOrders.push(imported);
-          addCustomerRecord(imported);
-          updated++;
-          console.log(`[StatusSync] Imported new order from Sendit: ${imported.name} / ${imported.phone}`);
+        // Import — with duplicate detection
+        const phone   = cleanPhone(String(delivery?.phone || ''));
+        const product = delivery?.products || '';
+        if (!phone) continue;
+
+        if (isDuplicateImport(phone, product)) {
+          console.log(`[StatusSync] Skipped duplicate import: ${phone} / ${product}`);
+          continue;
         }
+
+        const newOrder = {
+          id:        uid(),
+          name:      delivery?.name || 'Client',
+          phone,
+          city:      delivery?.district?.ville || delivery?.district?.name || '',
+          address:   delivery?.address || '',
+          product,
+          price:     delivery?.amount || 0,
+          notes:     '(imported from Sendit)',
+          status:    mapped,
+          reference: ref,
+          sentAt:    delivery?.created_at ? new Date(delivery.created_at).getTime() : Date.now(),
+          deliveredAt: mapped === 'delivered' ? Date.now() : null,
+          labelUrl:  delivery?.label_url || '',
+          senditData: delivery
+        };
+        sentOrders.push(newOrder);
+        addCustomerRecord(newOrder);
+        _newlyImportedIds.add(newOrder.id);
+        refStats.imported++;
+        report.imported++;
+        report.updated++;
       }
 
       await new Promise(r => setTimeout(r, 80));
     }
+
+    report.refs.push(refStats);
   }
 
-  // ── Step 2: Individual fallback for locally-tracked orders not caught above ─
+  // ── Step 2: Individual fallback ────────────────────────────────────────────
   const remaining = sentOrders.filter(o =>
     POLL_TRACK_STATES.has(normalizeOrderStatus(o.status)) &&
     (o.senditData?.code || o.senditData?.id) &&
     !matchedCodes.has(String(o.senditData?.code || o.senditData?.id || ''))
   );
-
   for (const order of remaining) {
     try {
       const rawStatus = await fetchSenditOrderStatus(order.senditData.code || order.senditData.id, token);
       const mapped = mapSenditStatus(rawStatus);
       if (mapped && mapped !== normalizeOrderStatus(order.status)) {
+        if (mapped === 'delivered' && !order.deliveredAt) order.deliveredAt = Date.now();
         order.status = mapped;
-        updated++;
+        report.updated++;
+        report.fallback++;
       }
       await new Promise(r => setTimeout(r, 200));
     } catch (_) {}
   }
 
+  report.durationMs = Date.now() - t0;
+
   // ── Persist & refresh UI ───────────────────────────────────────────────────
-  if (updated > 0) {
+  _lastSyncTime = Date.now();
+  updateLastSyncedLabel();
+  renderSyncReport(report);
+  _syncReport = report;
+
+  if (report.updated > 0) {
     saveData();
     updateStats();
     updateReferenceStats();
-    renderOrdersTable();
-    toast('info', '📡 Status sync', `${updated} order${updated>1?'s':''} updated from Sendit`);
+    renderOrdersTable(); // will apply flash badges via _newlyImportedIds
+    const parts = [];
+    if (report.updated - report.imported > 0) parts.push(`${report.updated - report.imported} updated`);
+    if (report.imported > 0) parts.push(`${report.imported} imported`);
+    toast('info', '📡 Status sync', parts.join(' · ') || 'No changes');
   } else {
+    toast('info', '📡 Status sync', 'All orders up to date');
     console.log('[StatusSync] No changes detected');
   }
+
+  return report;
 }
 
 /** Start periodic polling — called once on init */
 function startStatusPoller() {
   if (_pollTimer) return;
-  // First poll after 2 min (give time for orders to be sent first)
   _pollTimer = setTimeout(function tick() {
     pollDeliveryStatuses().catch(() => {});
     _pollTimer = setTimeout(tick, POLL_INTERVAL_MS);
   }, 2 * 60 * 1000);
 }
 
-/** Manual sync button handler */
+/** Manual sync (all selected refs) */
 async function manualStatusSync() {
   const btn = document.getElementById('btn-sync-status');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing…'; }
   try { await pollDeliveryStatuses(); }
   finally {
     if (btn) { btn.disabled = false; btn.textContent = '📡 Sync Status'; }
+  }
+}
+
+/** Per-reference sync triggered from a stat card button */
+async function syncSingleReference(ref) {
+  const btn = document.querySelector(`.ref-sync-btn[data-ref="${ref}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    await pollDeliveryStatuses([ref]);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻'; }
   }
 }
 
@@ -1566,8 +1736,11 @@ function addCustomerRecord(order) {
 function showConfirmMessage(order, labelUrl) {
   const msg = generateConfirmMsg(order);
   document.getElementById('confirm-msg-body').textContent = msg;
-  document.getElementById('confirm-label-url').href = labelUrl || '#';
-  document.getElementById('confirm-label-btn').style.display = labelUrl ? 'inline-flex' : 'none';
+  const labelBtn = document.getElementById('confirm-label-btn');
+  if (labelBtn) {
+    labelBtn.href = labelUrl || '#';
+    labelBtn.style.display = labelUrl ? 'inline-flex' : 'none';
+  }
   openModal('modal-confirm');
 }
 
@@ -1639,10 +1812,12 @@ function renderOrdersTable() {
   empty.style.display = 'none';
   wrap.style.display = 'block';
 
-  tbody.innerHTML = orders.map(o => `
-    <tr data-id="${o.id}">
+  tbody.innerHTML = orders.map(o => {
+    const isNew = _newlyImportedIds.has(o.id);
+    return `
+    <tr data-id="${o.id}"${isNew ? ' class="row-new-sync"' : ''}>
       <td><input type="checkbox" class="order-chk" data-id="${o.id}" onchange="toggleOrderSelect('${o.id}',this.checked)"></td>
-      <td><span style="font-weight:600">${o.name}</span><br><span style="color:var(--text-muted);font-size:0.75rem;font-family:var(--font-mono)">${o.phone}</span></td>
+      <td><span style="font-weight:600">${o.name}</span>${isNew ? ' <span class="badge-new-sync">✨ New</span>' : ''}<br><span style="color:var(--text-muted);font-size:0.75rem;font-family:var(--font-mono)">${o.phone}</span></td>
       <td>${o.city}</td>
       <td title="${escapeHtml(o.address || '')}">${escapeHtml(shortText(o.address || o.city, 50))}</td>
       <td>${o.product}</td>
@@ -1657,7 +1832,15 @@ function renderOrdersTable() {
         ${o.labelUrl ? `<a href="${o.labelUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:4px">🏷️</a>` : ''}
         <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="deleteOrder('${o.id}')">🗑</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+
+  // Animate flash, then fade out after 4s
+  if (_newlyImportedIds.size > 0) {
+    setTimeout(() => {
+      document.querySelectorAll('.row-new-sync').forEach(row => row.classList.add('row-new-sync--fade'));
+    }, 4000);
+  }
 }
 
 function statusBadge(status) {
