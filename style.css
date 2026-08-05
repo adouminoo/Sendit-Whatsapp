@@ -363,12 +363,4 @@ textarea {
     width: 5.8rem;
     height: 5.8rem;
   }
-
-  .bill-card {
-    grid-template-columns: auto 1fr;
-  }
-
-  .bill-amount {
-    grid-column: 2;
-  }
 }
